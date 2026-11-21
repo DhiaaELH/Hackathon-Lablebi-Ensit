@@ -193,14 +193,14 @@ def tutor(db: Session, course: Course, scope_course_ids: list[uuid.UUID], outlin
     rendered = render_tutor_turn(mode, message, hits, lang, script, hint_level, question, chosen_index)
     hit_refs = {h.ref for h in hits}
 
-    if is_demo():
+    if isinstance(get_provider("fast"), DemoProvider):
         return _demo_tutor(mode, lang, hits, hint_level, question, chosen_index), rendered, True
 
     if prev_method and mode == "alternate":
         rendered += f"\n\nPrevious explanation method (do not reuse): {prev_method}"
     system = [SystemBlock(GLOBAL_POLICY), SystemBlock(f"{ROLE_PROMPTS['sam']}\n\n<course_outline>\n{outline}\n</course_outline>", cache=True)]
     messages = stable_history(history) + [{"role": "user", "content": rendered}]
-    reply, _ = get_provider().structured("sam", system, messages, TutorReply, app_cache=False, auto_cache=True, effort="low" if mode in ("hint", "socratic", "ask") else None)
+    reply, _ = get_provider("fast").structured("sam", system, messages, TutorReply, app_cache=False, auto_cache=True, effort="low" if mode in ("hint", "socratic", "ask") else None)
     data = reply.model_dump()
     valid = [c for c in data["citations"] if c in hit_refs]
     if len(valid) != len(data["citations"]):

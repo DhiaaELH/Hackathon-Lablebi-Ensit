@@ -5,15 +5,26 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: string, path: string, body?: unknown, isForm = false): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, isForm = false, timeoutMs?: number): Promise<T> {
   const headers: Record<string, string> = { "X-Requested-With": "lessonforge" };
   if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
-  const res = await fetch(path, {
-    method,
-    headers,
-    credentials: "same-origin",
-    body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
-  });
+  const ctrl = new AbortController();
+  const timer = timeoutMs ? setTimeout(() => ctrl.abort(), timeoutMs) : undefined;
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      method,
+      headers,
+      credentials: "same-origin",
+      signal: ctrl.signal,
+      body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
+    });
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw new ApiError(408, "timeout");
+    throw new ApiError(0, "network");
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
   if (!res.ok) {
     let msg = res.statusText;
     try {
@@ -30,7 +41,7 @@ async function request<T>(method: string, path: string, body?: unknown, isForm =
 
 export const api = {
   get: <T>(path: string) => request<T>("GET", path),
-  post: <T>(path: string, body?: unknown) => request<T>("POST", path, body ?? {}),
+  post: <T>(path: string, body?: unknown, timeoutMs?: number) => request<T>("POST", path, body ?? {}, false, timeoutMs),
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body ?? {}),
   patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body ?? {}),
   del: <T>(path: string) => request<T>("DELETE", path),

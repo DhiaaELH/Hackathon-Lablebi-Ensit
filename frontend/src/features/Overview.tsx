@@ -5,6 +5,7 @@ import type { CourseDetail, SectionT } from "../api/types";
 import { Citations, ProgressBar } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 import type { MessageKey } from "../i18n/messages";
+import { Rich } from "../components/Rich";
 
 const REASONS = ["vocabulary", "missing_prerequisite", "too_fast", "need_example", "exercise_too_hard"] as const;
 
@@ -93,7 +94,7 @@ export function Overview({ course }: { course: CourseDetail }) {
                 </button>
               </div>
             </div>
-            {ch.summary && <p className="muted">{ch.summary}</p>}
+            {ch.summary && <p className="muted"><Rich text={ch.summary} /></p>}
             {ch.sections.map((s) => {
               const tr = responses.data?.filter((r) => r.section_id === s.id) ?? [];
               return (
@@ -102,23 +103,23 @@ export function Overview({ course }: { course: CourseDetail }) {
                     <h3 style={{ margin: 0 }}>{s.title}</h3>
                     <Citations refs={s.citations} map={course.refs} />
                   </div>
-                  <p style={{ margin: 0 }}>{s.content}</p>
+                  <Rich as="p" text={s.content} />
                   {s.objectives.length > 0 && (
                     <div className="small"><strong>{t("objectives")}:</strong> {s.objectives.join(" · ")}</div>
                   )}
                   {s.key_terms.length > 0 && (
                     <div className="small">
                       <strong>{t("keyTerms")}</strong>
-                      <ul className="term-list">{s.key_terms.map((k) => <li key={k.term}><strong>{k.term}</strong> — {k.definition}</li>)}</ul>
+                      <ul className="term-list">{s.key_terms.map((k) => <li key={k.term}><strong><Rich text={k.term} /></strong> — <Rich text={k.definition} /></li>)}</ul>
                     </div>
                   )}
                   {s.formulas.length > 0 && (
                     <div className="small">
                       <strong>{t("formulas")}</strong>
-                      <ul className="term-list">{s.formulas.map((f) => <li key={f.name}>{f.name}: <span className="formula">{f.expression}</span> {f.meaning && <span className="muted">— {f.meaning}</span>}</li>)}</ul>
+                      <ul className="term-list">{s.formulas.map((f) => <li key={f.name}>{f.name}: <span className="formula"><Rich text={f.expression} /></span> {f.meaning && <span className="muted">— <Rich text={f.meaning} /></span>}</li>)}</ul>
                     </div>
                   )}
-                  {s.hard_points.length > 0 && <div className="alert alert-warning small"><strong>{t("hardPoints")}:</strong> {s.hard_points.join(" · ")}</div>}
+                  {s.hard_points.length > 0 && <div className="alert alert-warning small"><strong>{t("hardPoints")}:</strong> <Rich text={s.hard_points.join(" · ")} /></div>}
                   {tr.map((r) => (
                     <div key={r.id} className="alert alert-success small"><strong>{t("teacherResponses")} · {t(`kind_${r.kind}` as MessageKey)}:</strong> {r.body}</div>
                   ))}

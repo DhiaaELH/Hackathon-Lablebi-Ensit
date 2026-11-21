@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-3.5-flash"
     gemini_fallback_models: str = "gemini-3.5-flash-lite"
+    gemini_fast_model: str = "gemini-3.5-flash-lite"
+    # Optional per-tier override "provider:model", e.g. LLM_FAST=anthropic:claude-haiku-5-5, LLM_SMART=gemini:gemini-3.5-flash
+    llm_fast: str | None = None  # interactive: Sam (tutor) via Nova
+    llm_smart: str | None = None  # background generation: Clara, Quinn, Alex, Sage, Max, Riley
     llm_timeout_s: float = 180.0
     corpus_max_tokens: int = 150_000
 
@@ -47,9 +51,22 @@ class Settings(BaseSettings):
             return "gemini"
         return "demo"
 
+    def tier(self, tier: str) -> tuple[str, str]:
+        """Resolve a tier ('fast' | 'smart') to (provider, model)."""
+        explicit = self.llm_fast if tier == "fast" else self.llm_smart
+        if explicit and ":" in explicit:
+            prov, model = explicit.split(":", 1)
+            return prov.strip(), model.strip()
+        prov = self.active_provider
+        if prov == "gemini":
+            return prov, self.gemini_fast_model if tier == "fast" else self.gemini_model
+        if prov == "anthropic":
+            return prov, self.llm_model
+        return "demo", "demo-fixtures"
+
     @property
     def demo_mode(self) -> bool:
-        return self.active_provider == "demo"
+        return self.tier("smart")[0] == "demo" and self.tier("fast")[0] == "demo"
 
 
 @lru_cache

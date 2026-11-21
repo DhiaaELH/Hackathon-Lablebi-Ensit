@@ -20,7 +20,7 @@ cd frontend && npm install && npm run dev   # http://localhost:5173 (proxies /ap
 Database options: with `DATABASE_URL` unset, the backend starts an **embedded PostgreSQL 16 + pgvector** (`pgserver` package, data in `backend/.pgdata`). For a regular server: `docker compose up -d db` and set
 `DATABASE_URL=postgresql+psycopg://lessonforge:lessonforge@localhost:5432/lessonforge`.
 
-**Checks:** `cd backend && .venv/bin/python -m pytest -q` (22 tests) · `cd frontend && npm run typecheck && npm run build`.
+**Checks:** `cd backend && .venv/bin/python -m pytest -q` (23 tests) · `cd frontend && npm run typecheck && npm run build`.
 
 ### Demo accounts (local only, synthetic)
 Password for all: `demo-password-123` (override with `LF_DEMO_PASSWORD` before seeding).
@@ -31,7 +31,9 @@ New teacher sign-ups need `TEACHER_INVITE_CODE` (default `demo-teacher-code`).
 Put **one** key in `backend/.env` (copy `.env.example`; never commit `.env`):
 * `GEMINI_API_KEY=...` → Gemini (`GEMINI_MODEL`, with automatic fallback to `GEMINI_FALLBACK_MODELS` when a model is overloaded).
 * `ANTHROPIC_API_KEY=...` → Claude. With both keys, `LLM_PROVIDER=gemini|anthropic` chooses.
-* Check: `GET /api/system/health` shows the active provider. Course owners/teachers get a **Regenerate with AI** button to rerun all agents live.
+* **Two tiers:** `fast` (interactive tutor, default `gemini-3.5-flash-lite`, low thinking → ~2 s answers) and `smart` (background generation, `GEMINI_MODEL`). Override either with `LLM_FAST=provider:model` / `LLM_SMART=provider:model` (e.g. `LLM_FAST=anthropic:claude-haiku-5-5`).
+* Math: agents write LaTeX in `$...$`; the UI renders it with KaTeX and the PDF converts it to readable symbols.
+* Check: `GET /api/system/health` shows the active provider and both tiers. Course owners/teachers get a **Regenerate with AI** button to rerun all agents live.
 
 ### Demo mode
 * **No key** → *demo mode* (yellow banner). The seeded course uses hand-written fixtures; new uploads use rule-based heuristics; the tutor assembles answers from retrieved passages. Nothing claims an AI ran.

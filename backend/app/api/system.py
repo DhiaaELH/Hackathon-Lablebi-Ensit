@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 
 from ..config import get_settings
 from ..db import get_db
-from ..llm.provider import get_provider
 from ..models import LLMCall
 from ..retrieval.embeddings import get_embedder
 from ..security import current_user
@@ -15,8 +14,9 @@ router = APIRouter(prefix="/api/system", tags=["system"])
 @router.get("/health")
 def health():
     s = get_settings()
-    p = get_provider()
-    return {"ok": True, "demo_mode": s.demo_mode, "provider": p.name, "model": p.model, "embeddings": get_embedder().name,
+    fast, smart = s.tier("fast"), s.tier("smart")
+    return {"ok": True, "demo_mode": s.demo_mode, "provider": smart[0], "model": smart[1],
+            "tiers": {"fast": f"{fast[0]}:{fast[1]}", "smart": f"{smart[0]}:{smart[1]}"}, "embeddings": get_embedder().name,
             "resource_finder": bool(s.search_api_key), "min_cohort": max(5, s.insight_min_cohort)}
 
 

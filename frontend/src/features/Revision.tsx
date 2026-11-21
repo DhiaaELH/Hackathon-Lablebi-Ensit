@@ -3,6 +3,7 @@ import { useRevision } from "../api/hooks";
 import type { CourseDetail, Revision as RevisionT } from "../api/types";
 import { Citations, Empty, ErrorBox, QualityBadge, Spinner } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
+import { Rich } from "../components/Rich";
 
 function Flashcard({ c, course }: { c: NonNullable<RevisionT["revision"]>["flashcards"][number]; course: CourseDetail }) {
   const [flipped, setFlipped] = useState(false);
@@ -11,7 +12,7 @@ function Flashcard({ c, course }: { c: NonNullable<RevisionT["revision"]>["flash
     <button type="button" className="card flashcard" onClick={() => setFlipped((f) => !f)} aria-label={`${t("flip")}: ${c.front}`} aria-pressed={flipped}
       style={{ font: "inherit", width: "100%" }}>
       <span className="badge" style={{ alignSelf: "center", marginBottom: 6 }}>{c.kind}</span>
-      {flipped ? <span>{c.back}</span> : <span className="front">{c.front}</span>}
+      {flipped ? <Rich text={c.back} /> : <span className="front"><Rich text={c.front} /></span>}
       {flipped && <span style={{ marginTop: 6 }} onClick={(e) => e.stopPropagation()}><Citations refs={c.citations} map={course.refs} /></span>}
     </button>
   );
@@ -35,7 +36,7 @@ export function RevisionTab({ course }: { course: CourseDetail }) {
         {rev.summaries.map((s) => (
           <div key={s.chapter_title} className="section-block">
             <h3>{s.chapter_title} <Citations refs={s.citations} map={course.refs} /></h3>
-            <ul className="term-list">{s.bullets.map((b, i) => <li key={i}>{b}</li>)}</ul>
+            <ul className="term-list">{s.bullets.map((b, i) => <li key={i}><Rich text={b} /></li>)}</ul>
           </div>
         ))}
       </section>

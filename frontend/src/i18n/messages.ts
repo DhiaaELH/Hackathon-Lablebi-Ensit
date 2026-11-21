@@ -49,7 +49,7 @@ const fr = {
   derjaNote: "La Derja est en test : des erreurs sont possibles, le français technique est conservé entre parenthèses.",
   noNotifications: "Aucune notification.", missing: "Contenu manquant ou ambigu", promptCache: "Cache de prompt",
   analysis: "Analyse", resources: "Fichiers", workflow: "Agents",
-  regenerate: "Régénérer avec l'IA", regenerateConfirm: "Les agents vont régénérer tout le contenu de ce cours avec l'IA (le contenu et les signaux actuels liés aux sections seront remplacés). Continuer ?",
+  regenerate: "Régénérer avec l'IA", novaTimeout: "La réponse prend trop de temps (le modèle est surchargé). Réessaie.", slowModel: "le modèle est lent", regenerateConfirm: "Les agents vont régénérer tout le contenu de ce cours avec l'IA (le contenu et les signaux actuels liés aux sections seront remplacés). Continuer ?",
 };
 
 type Messages = typeof fr;
@@ -102,7 +102,7 @@ const en: Messages = {
   derjaNote: "Derja support is experimental: mistakes are possible, technical French terms are kept in parentheses.",
   noNotifications: "No notifications.", missing: "Missing or ambiguous content", promptCache: "Prompt cache",
   analysis: "Analysis", resources: "Files", workflow: "Agents",
-  regenerate: "Regenerate with AI", regenerateConfirm: "The agents will regenerate all content of this course with the AI (current content and section-linked signals will be replaced). Continue?",
+  regenerate: "Regenerate with AI", novaTimeout: "The answer is taking too long (the model is overloaded). Please retry.", slowModel: "the model is slow", regenerateConfirm: "The agents will regenerate all content of this course with the AI (current content and section-linked signals will be replaced). Continue?",
 };
 
 const ar: Messages = {
@@ -153,7 +153,7 @@ const ar: Messages = {
   derjaNote: "دعم الدارجة تجريبي: الأخطاء ممكنة، وتبقى المصطلحات الفرنسية بين قوسين.",
   noNotifications: "لا إشعارات.", missing: "محتوى ناقص أو غامض", promptCache: "ذاكرة الطلبات",
   analysis: "التحليل", resources: "الملفات", workflow: "الوكلاء",
-  regenerate: "إعادة الإنشاء بالذكاء الاصطناعي", regenerateConfirm: "سيعيد الوكلاء إنشاء كل محتوى هذا الدرس بالذكاء الاصطناعي (سيُستبدل المحتوى الحالي والإشارات المرتبطة بالأقسام). متابعة؟",
+  regenerate: "إعادة الإنشاء بالذكاء الاصطناعي", novaTimeout: "الإجابة تستغرق وقتًا طويلًا (النموذج مثقل). أعد المحاولة.", slowModel: "النموذج بطيء", regenerateConfirm: "سيعيد الوكلاء إنشاء كل محتوى هذا الدرس بالذكاء الاصطناعي (سيُستبدل المحتوى الحالي والإشارات المرتبطة بالأقسام). متابعة؟",
 };
 
 const derja: Messages = {
@@ -177,7 +177,7 @@ const derja: Messages = {
   thisChapterIsHard: "الفصل هذا صعيب", newThread: "اسأل سؤال",
   novaHello: "عسلامة! أنا نوفا. اسألني على الكور متاعك ونبعث سؤالك للمختص المناسب.",
   askPlaceholder: "اكتب سؤالك…", mode_answer: "عطيني الجواب", mode_alternate: "مازلت ما فهمتش", notInCourse: "موش موجود في الكور متاعك", thinking: "نوفا تخمم…",
-  regenerate: "عاود اعمل المحتوى بالذكاء الاصطناعي",
+  regenerate: "عاود اعمل المحتوى بالذكاء الاصطناعي", novaTimeout: "الجواب طوّل برشا (الموديل مثقّل). عاود جرّب.", slowModel: "الموديل بطيء",
   regenerateConfirm: "الوكلاء باش يعاودو يعملو المحتوى الكل متاع الكور هذا بالذكاء الاصطناعي (المحتوى الحالي والإشارات متاع الأجزاء يتبدلو). نكمّلو؟",
   derjaNote: "الدارجة في التجربة: تنجم تصير أغلاط، والكلمات التقنية بالفرنسي تقعد بين قوسين.",
 };

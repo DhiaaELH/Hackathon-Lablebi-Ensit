@@ -5,6 +5,7 @@ import type { AttemptResult, CourseDetail } from "../api/types";
 import { Citations, Empty, ErrorBox, QualityBadge, Spinner } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 import type { NovaRequest } from "./Nova";
+import { Rich } from "../components/Rich";
 
 type Ask = (r: Omit<NovaRequest, "nonce">) => void;
 
@@ -39,19 +40,19 @@ function Runner({ id, course, ask, onClose }: { id: string; course: CourseDetail
         const r = res(q.id);
         return (
           <fieldset key={q.id} className="stack" style={{ border: 0, padding: 0, margin: 0 }}>
-            <legend style={{ fontWeight: 600, marginBottom: 6 }}>{qi + 1}. {q.prompt} <span className="muted small">({q.points} pt)</span></legend>
+            <legend style={{ fontWeight: 600, marginBottom: 6 }}>{qi + 1}. <Rich text={q.prompt} /> <span className="muted small">({q.points} pt)</span></legend>
             {q.choices.map((c, ci) => {
               const cls = r ? (ci === r.correct_index ? "right" : ci === r.chosen ? "wrong" : "") : answers[q.id] === ci ? "selected" : "";
               return (
                 <label key={ci} className={`choice ${cls}`}>
                   <input type="radio" name={q.id} disabled={!!result} checked={answers[q.id] === ci} onChange={() => setAnswers((s) => ({ ...s, [q.id]: ci }))} />
-                  <span>{c}</span>
+                  <Rich text={c} />
                 </label>
               );
             })}
             {r && (
               <div className={`alert small ${r.correct ? "alert-success" : "alert-error"}`}>
-                <strong>{r.correct ? t("correct") : t("incorrect")}.</strong> {r.misconception && <em>{r.misconception} </em>}{r.explanation} <Citations refs={r.citations} map={course.refs} />
+                <strong>{r.correct ? t("correct") : t("incorrect")}.</strong> {r.misconception && <em><Rich text={r.misconception} /> </em>}<Rich text={r.explanation} /> <Citations refs={r.citations} map={course.refs} />
                 {!r.correct && r.chosen !== null && (
                   <div style={{ marginTop: 6 }}>
                     <button className="btn btn-sm" onClick={() => ask({ message: t("explainMistake"), mode: "explain_mistake", question_id: q.id, chosen_index: r.chosen! })}>

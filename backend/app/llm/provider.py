@@ -96,13 +96,15 @@ def _log_call(role: str, meta: CallMeta, latency_ms: int) -> None:
 class AnthropicProvider:
     name = "anthropic"
 
-    def __init__(self) -> None:
+    def __init__(self, model: str | None = None) -> None:
         import anthropic
 
         s = get_settings()
+        if not s.anthropic_api_key:
+            raise LLMError("ANTHROPIC_API_KEY is not set but a tier uses the anthropic provider")
         self._anthropic = anthropic
         self.client = anthropic.Anthropic(api_key=s.anthropic_api_key, timeout=s.llm_timeout_s, max_retries=2)
-        self.model = s.llm_model
+        self.model = model or s.llm_model
         self.effort = s.llm_effort
 
     @staticmethod
@@ -210,16 +212,21 @@ class GeminiProvider:
 
     name = "gemini"
 
-    def __init__(self) -> None:
+    def __init__(self, model: str | None = None, fast: bool = False) -> None:
         from google import genai
         from google.genai import errors, types
 
         s = get_settings()
+        if not s.gemini_api_key:
+            raise LLMError("GEMINI_API_KEY is not set but a tier uses the gemini provider")
         self._types, self._errors = types, errors
-        self.client = genai.Client(api_key=s.gemini_api_key, http_options=types.HttpOptions(timeout=int(s.llm_timeout_s * 1000)))
-        self.model = s.gemini_model
+        timeout_s = 60 if fast else s.llm_timeout_s
+        self.client = genai.Client(api_key=s.gemini_api_key, http_options=types.HttpOptions(timeout=int(timeout_s * 1000)))
+        self.model = model or s.gemini_model
+        self.fast = fast
         # Tried in order when a model is overloaded (429/5xx) or unavailable to this key (404).
-        self.models = [s.gemini_model] + [m.strip() for m in s.gemini_fallback_models.split(",") if m.strip() and m.strip() != s.gemini_model]
+        pool = [m.strip() for m in (s.gemini_fallback_models + "," + s.gemini_model + "," + s.gemini_fast_model).split(",") if m.strip()]
+        self.models = list(dict.fromkeys([self.model] + pool))[:3]
 
     def _generate(self, contents, config):
         last: Exception | None = None
@@ -266,11 +273,13 @@ class GeminiProvider:
                 _log_call(role, meta, 0)
                 return hit, meta
         t = self._types
+        level = "LOW" if self.fast else {"low": "LOW", "medium": "MEDIUM", "high": "HIGH"}.get(effort or "")
         config = t.GenerateContentConfig(
             system_instruction="\n\n".join(b.text for b in system),
             response_mime_type="application/json",
             response_json_schema=schema.model_json_schema(),
             max_output_tokens=16000,
+            thinking_config=t.ThinkingConfig(thinking_level=level) if level else None,
         )
         t0 = time.monotonic()
         used_model, resp = self._generate(self._contents(messages), config)
@@ -310,14 +319,27 @@ def _app_cache_put(key: str, role: str, parsed: BaseModel) -> None:
         db.commit()
 
 
-def get_provider():
-    global _provider
-    if _provider is None:
-        name = get_settings().active_provider
-        _provider = {"anthropic": AnthropicProvider, "gemini": GeminiProvider}.get(name, DemoProvider)()
-    return _provider
+_by_tier: dict[str, object] = {}
+
+
+def get_provider(tier: str = "smart"):
+    """'smart' = background generation roles, 'fast' = interactive tutor. Each tier may use its own
+    provider/model (LLM_FAST / LLM_SMART), e.g. a quick model for chat and a stronger one for generation.
+    `_provider`, when set (tests, seeding), overrides every tier."""
+    if _provider is not None:
+        return _provider
+    if tier not in _by_tier:
+        prov, model = get_settings().tier(tier)
+        if prov == "anthropic":
+            _by_tier[tier] = AnthropicProvider(model)
+        elif prov == "gemini":
+            _by_tier[tier] = GeminiProvider(model, fast=tier == "fast")
+        else:
+            _by_tier[tier] = DemoProvider()
+    return _by_tier[tier]
 
 
 def reset_provider() -> None:
     global _provider
     _provider = None
+    _by_tier.clear()

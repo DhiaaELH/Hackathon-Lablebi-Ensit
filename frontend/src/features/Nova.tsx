@@ -5,6 +5,7 @@ import type { NovaHistoryItem, NovaReply, RefT } from "../api/types";
 import { AGENT_INITIAL, AGENT_NAME, Citations } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 import type { MessageKey } from "../i18n/messages";
+import { Rich } from "../components/Rich";
 
 export type NovaMode = "ask" | "socratic" | "hint" | "answer" | "alternate" | "explain_mistake" | "mini_lesson";
 export interface NovaRequest {
@@ -39,7 +40,9 @@ export function NovaPanel({ courseId, refs, request, onOpenTab }: {
   const { t, lang } = useI18n();
   const history = useNovaHistory(courseId);
   const [lines, setLines] = useState<Line[]>([]);
-  const [mode, setMode] = useState<NovaMode>("socratic");
+  const [mode, setMode] = useState<NovaMode>("ask");
+  const [elapsed, setElapsed] = useState(0);
+  const [failed, setFailed] = useState<Omit<NovaRequest, "nonce"> | null>(null);
   const [hintLevel, setHintLevel] = useState(1);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -59,23 +62,34 @@ export function NovaPanel({ courseId, refs, request, onOpenTab }: {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
   }, [lines, busy]);
 
-  async function send(req: Omit<NovaRequest, "nonce">) {
+  useEffect(() => {
+    if (!busy) return;
+    setElapsed(0);
+    const id = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [busy]);
+
+  async function send(req: Omit<NovaRequest, "nonce">, isRetry = false) {
     setBusy(true);
-    setLines((l) => [...l, { key: `u${Date.now()}`, role: "user", text: req.message, citations: [] }]);
+    setFailed(null);
+    if (!isRetry) setLines((l) => [...l, { key: `u${Date.now()}`, role: "user", text: req.message, citations: [] }]);
     try {
       const body: Record<string, unknown> = { message: req.message, mode: req.mode, language: lang };
       if (req.mode === "hint") body.hint_level = hintLevel;
       if (req.question_id) body.question_id = req.question_id;
       if (req.chosen_index !== undefined) body.chosen_index = req.chosen_index;
       if (req.concept_id) body.concept_id = req.concept_id;
-      const r = await api.post<{ routed_to: string[]; replies: NovaReply[] }>(`/api/courses/${courseId}/nova`, body);
+      const r = await api.post<{ routed_to: string[]; replies: NovaReply[] }>(`/api/courses/${courseId}/nova`, body, 90_000);
       setLines((l) => [...l, ...r.replies.map((rep, i) => ({
         key: `a${Date.now()}-${i}`, role: "assistant" as const, agent: rep.agent_role, handoff: rep.handoff, text: rep.message,
         citations: rep.citations, supported: rep.supported, demo: rep.demo, action: rep.action,
       }))]);
       if (req.mode === "hint") setHintLevel((h) => Math.min(3, h + 1));
+      if (r.replies.some((x) => x.error)) setFailed(req);
     } catch (e) {
-      setLines((l) => [...l, { key: `e${Date.now()}`, role: "assistant", agent: "nova", text: `${t("error")}: ${(e as Error).message}`, citations: [] }]);
+      const msg = (e as Error).message === "timeout" ? t("novaTimeout") : `${t("error")}: ${(e as Error).message}`;
+      setLines((l) => [...l, { key: `e${Date.now()}`, role: "assistant", agent: "nova", text: msg, citations: [] }]);
+      setFailed(req);
     } finally {
       setBusy(false);
     }
@@ -122,12 +136,13 @@ export function NovaPanel({ courseId, refs, request, onOpenTab }: {
                 {l.supported === false && <span className="badge badge-error" style={{ marginInlineStart: 6 }}>{t("notInCourse")}</span>}
               </div>
             )}
-            {l.text}
+            <Rich text={l.text} />
             {l.citations?.length > 0 && <div style={{ marginTop: 6 }}><Citations refs={l.citations} map={refs} /></div>}
             {l.action && <div style={{ marginTop: 6 }}><button className="btn btn-sm" onClick={() => onOpenTab(l.action!.open)}>{t("open")} →</button></div>}
           </div>
         ))}
-        {busy && <div className="msg msg-bot muted">{t("thinking")}</div>}
+        {busy && <div className="msg msg-bot muted" role="status"><span className="spinner" aria-hidden="true" /> {t("thinking")} {elapsed > 2 ? `${elapsed}s` : ""}{elapsed > 20 ? ` — ${t("slowModel")}` : ""}</div>}
+        {failed && !busy && <div><button className="btn btn-sm" onClick={() => send(failed, true)}>↻ {t("retry")}</button></div>}
       </div>
       <form className="nova-foot" onSubmit={submit}>
         <div className="mode-row" role="radiogroup" aria-label="Mode">

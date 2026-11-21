@@ -28,7 +28,7 @@ def _gemini(text, finish="STOP"):
     from google.genai import errors, types
 
     p = provider_mod.GeminiProvider.__new__(provider_mod.GeminiProvider)
-    p._types, p._errors, p.model, p.models = types, errors, "gemini-test", ["gemini-test"]
+    p._types, p._errors, p.model, p.models, p.fast = types, errors, "gemini-test", ["gemini-test"], False
     fake = FakeModels(text, finish)
     p.client = SimpleNamespace(models=fake)
     return p, fake
@@ -82,3 +82,13 @@ def test_auto_provider_selection(monkeypatch):
     assert Settings(anthropic_api_key="a", gemini_api_key="g", llm_provider="auto").active_provider == "anthropic"
     assert Settings(anthropic_api_key="a", gemini_api_key="g", llm_provider="gemini").active_provider == "gemini"
     assert Settings(anthropic_api_key=None, gemini_api_key=None, llm_provider="auto").active_provider == "demo"
+
+
+def test_tiers_resolution():
+    from app.config import Settings
+
+    g = Settings(anthropic_api_key=None, gemini_api_key="g", llm_provider="auto", gemini_model="m-smart", gemini_fast_model="m-fast")
+    assert g.tier("smart") == ("gemini", "m-smart") and g.tier("fast") == ("gemini", "m-fast")
+    mixed = Settings(gemini_api_key="g", anthropic_api_key="a", llm_fast="anthropic:claude-haiku-5-5", llm_smart="gemini:gemini-3.5-flash")
+    assert mixed.tier("fast") == ("anthropic", "claude-haiku-5-5") and mixed.tier("smart") == ("gemini", "gemini-3.5-flash")
+    assert not mixed.demo_mode

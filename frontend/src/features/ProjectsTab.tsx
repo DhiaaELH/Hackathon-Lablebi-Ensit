@@ -4,6 +4,7 @@ import { qk, useInvalidate, useProjects } from "../api/hooks";
 import type { CourseDetail } from "../api/types";
 import { ErrorBox, ProgressBar, Spinner } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
+import { Rich } from "../components/Rich";
 
 export function ProjectsTab({ course }: { course: CourseDetail }) {
   const { t } = useI18n();
@@ -50,8 +51,8 @@ export function ProjectsTab({ course }: { course: CourseDetail }) {
                 <h3 style={{ margin: 0 }}>{pr.title}</h3>
                 <div className="row small"><span className="badge">{pr.difficulty}</span><span className="badge">{t("effort")}: {pr.effort_hours} h</span>{pr.status && <span className="badge badge-primary">{pr.status}</span>}</div>
               </div>
-              <p style={{ margin: 0 }}>{pr.goal}</p>
-              <div className="small"><strong>{t("steps")}:</strong><ol className="term-list">{pr.steps.map((s, i) => <li key={i}>{s}</li>)}</ol></div>
+              <Rich as="p" text={pr.goal} />
+              <div className="small"><strong>{t("steps")}:</strong><ol className="term-list">{pr.steps.map((s, i) => <li key={i}><Rich text={s} /></li>)}</ol></div>
               <div className="small"><strong>{t("materials")}:</strong> {pr.materials.join(", ")}</div>
               <div className="small"><strong>{t("successCriteria")}:</strong> {pr.success_criteria.join(" · ")}</div>
               {pr.status === "started" && <ProgressBar value={pr.progress / 100} label={pr.title} />}

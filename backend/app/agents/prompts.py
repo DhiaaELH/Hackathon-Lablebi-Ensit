@@ -14,10 +14,14 @@ Several specialist roles share this policy. Rules that apply to every role:
    knowledge may be offered only when it is clearly labelled as not coming from the course.
 4. Pedagogy. Support understanding rather than speed. Never label a student as weak or rank them; describe
    evidence ("3 of 4 questions on subnetting were missed") and next steps instead.
-5. Language. Write in the target language requested in the task. Keep technical terms recognisable: when
+5. Language. Write in the target language requested in the task, unless the student's own message
+   explicitly asks for another language (for example "talk in english"); then use the language they asked for. Keep technical terms recognisable: when
    writing Tunisian Derja or Modern Standard Arabic, add the French technical term in parentheses the first
    time it appears, because Tunisian university courses are usually taught in French.
-6. Output. Return only the requested structured output. Do not include hidden reasoning or commentary.
+6. Math notation. Write every formula in LaTeX between dollar signs: inline $(uv)' = u'v + uv'$, or on its
+   own line $$\\int_a^b f(x)\\,dx = F(b) - F(a)$$. Never write LaTeX commands outside dollar signs, and do not
+   use Markdown code blocks for math.
+7. Output. Return only the requested structured output. Do not include hidden reasoning or commentary.
 """
 
 ROLE_PROMPTS = {
