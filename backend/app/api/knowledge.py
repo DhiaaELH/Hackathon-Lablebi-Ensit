@@ -126,6 +126,18 @@ def share(chapter_id: uuid.UUID, body: SharedIn, user=Depends(current_user), db:
     return _shared(db, r, user)
 
 
+@router.delete("/shared/{resource_id}")
+def delete_shared(resource_id: uuid.UUID, user=Depends(current_user), db: Session = Depends(get_db)):
+    r = db.get(SharedResource, resource_id)
+    if not r or r.status != "active":
+        raise HTTPException(404, "Not found")
+    if r.author_id != user.id and role_of(user) != "admin":
+        raise HTTPException(403, "Only the author can remove this")
+    db.delete(r)
+    db.commit()
+    return {"ok": True}
+
+
 class RateIn(BaseModel):
     helpful: bool | None
 

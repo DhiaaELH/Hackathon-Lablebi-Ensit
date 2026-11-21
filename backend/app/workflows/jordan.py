@@ -43,9 +43,10 @@ from ..models import (
 
 log = logging.getLogger("lessonforge.jordan")
 PARALLEL_ROLES = ["quinn", "alex", "sage", "max"]
-ROLE_LABEL = {"clara": "Clara is analysing the course structure", "quinn": "Quinn is writing chapter quizzes",
-              "alex": "Alex is designing practice exercises", "sage": "Sage is preparing revision material",
-              "max": "Max is building a mock exam", "riley": "Riley is checking quality"}
+ROLE_LABEL = {"clara": "Analysing the course structure", "quinn": "Writing chapter quizzes",
+              "alex": "Designing practice exercises", "sage": "Preparing revision material",
+              "max": "Building a mock exam", "riley": "Checking quality"}
+WORK = {"quinn": "the quizzes", "alex": "the exercises", "sage": "the revision material", "max": "the mock exam", "clara": "the course structure"}
 
 
 def _now():
@@ -281,7 +282,7 @@ def _run_parallel_role(wf_id: uuid.UUID, task_id: uuid.UUID, script: str) -> Non
             return
         payload = _resolve_payload_citations(db, course, role, result.payload)
         _, _, concepts = _lookup(db, course)
-        event(db, wf.id, "riley", "running", f"Riley is checking {role.capitalize()}'s work…", task.id)
+        event(db, wf.id, "riley", "running", f"Checking {WORK.get(role, role)}…", task.id)
         verdict, findings = roles.riley_review(db, course, wf.language, role, payload, set(concepts))
         persist_role_output(db, course, role, payload, wf.language, verdict, findings, task.id)
         task.status = "done" if verdict in ("pass", "unverified", "uncertain") else "needs_review"
@@ -305,7 +306,7 @@ def run_workflow(wf_id: uuid.UUID, script: str = "arabic") -> None:
             event(db, wf.id, "clara", "running", ROLE_LABEL["clara"] + "…", clara.id)
             result = _attempt(db, clara, lambda: roles.generate("clara", db, course, wf.language, script))
             if result is None:
-                raise LLMError(clara.error or "Clara failed")
+                raise LLMError(clara.error or "Course analysis failed")
             payload = result.payload
             findings = roles.riley_rules("clara", payload, set(), set())
             persist_structure(db, course, payload)
@@ -318,7 +319,7 @@ def run_workflow(wf_id: uuid.UUID, script: str = "arabic") -> None:
             clara.status = "done"
             clara.output = _envelope(clara, wf, "done", payload, findings, result.demo)
             db.commit()
-            event(db, wf.id, "clara", "done", f"Clara found {len(payload['chapters'])} chapters and {len(payload['concepts'])} concepts.", clara.id)
+            event(db, wf.id, "clara", "done", f"Found {len(payload['chapters'])} chapters and {len(payload['concepts'])} concepts.", clara.id)
         except (CorpusTooLarge, LLMError) as e:
             clara.status, clara.error = "failed", str(e)
             wf.status, course.status = "failed", "failed"

@@ -60,6 +60,24 @@ function Runner({ id, course, ask, onClose }: { id: string; course: CourseDetail
   const [result, setResult] = useState<AttemptResult | null>(null);
   const [err, setErr] = useState<unknown>(null);
   const invalidate = useInvalidate();
+  const toast = useToast();
+  // Optional countdown chosen by the student; when it runs out the answers given so far are submitted.
+  const [timer, setTimer] = useState<{ end: number; total: number } | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const left = timer ? Math.max(0, Math.ceil((timer.end - now) / 1000)) : null;
+  useEffect(() => {
+    if (!timer) return;
+    const tick = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(tick);
+  }, [timer]);
+  useEffect(() => {
+    if (left !== 0 || !timer) return;
+    setTimer(null);
+    if (result) return;
+    if (Object.keys(answers).length) { void submit(); toast(t("timeUp"), "info"); } else toast(t("timeUpEmpty"), "info");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [left]);
+  const startTimer = (minutes: number) => { setNow(Date.now()); setTimer({ end: Date.now() + minutes * 60_000, total: minutes * 60 }); };
   const qs = (a.data?.questions ?? []).filter((x) => x.qtype !== "open");
   const problems = (a.data?.questions ?? []).filter((x) => x.qtype === "open");
 
@@ -85,6 +103,7 @@ function Runner({ id, course, ask, onClose }: { id: string; course: CourseDetail
   async function submit() {
     try {
       const r = await api.post<AttemptResult>(`/api/assessments/${id}/attempts`, { answers });
+      setTimer(null);
       setResult(r);
       setCur(0);
       invalidate([...qk.assessments(course.id)], [...qk.progress(course.id)], [...qk.projects(course.id)], [...qk.recs]);
@@ -107,6 +126,23 @@ function Runner({ id, course, ask, onClose }: { id: string; course: CourseDetail
         <div className="row"><SpeechSettings /><QualityBadge status={a.data.quality_status} /><button className="btn btn-sm btn-ghost btn-icon" onClick={onClose} aria-label="close"><Icon name="x" /></button></div>
       </div>
       {qs.length > 0 && problems.length > 0 && <h3 className="row" style={{ margin: 0 }}><Icon name="question" size={16} /> {t("quickQuestions")}</h3>}
+      {qs.length > 0 && !result && !timer && (
+        <div className="timer-pick small">
+          <span className="row muted" style={{ gap: "0.35rem" }}><Icon name="clock" size={15} /> {t("timerPick")}</span>
+          {[...new Set([Math.max(2, Math.round(qs.length * 1.5)), 5, 10, 20, 30])].sort((x, y) => x - y).map((m) => (
+            <button key={m} type="button" className="chip" onClick={() => startTimer(m)}>{m} min</button>
+          ))}
+        </div>
+      )}
+      {timer && left !== null && !result && (
+        <div className="stack" style={{ gap: 6 }} role="timer" aria-label={t("timeLeft")}>
+          <div className="row between">
+            <span className={`timer-clock${left <= 30 ? " low" : ""}`}><Icon name="clock" size={15} /> {Math.floor(left / 60)}:{String(left % 60).padStart(2, "0")}</span>
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => setTimer(null)}><Icon name="x" size={13} /> {t("stopTimer")}</button>
+          </div>
+          <div className={`timer-bar${left <= 30 ? " low" : ""}`}><span style={{ width: `${(left / timer.total) * 100}%` }} /></div>
+        </div>
+      )}
       {result && (
         <div className="row" style={{ background: "var(--paper)", padding: "0.8rem", borderRadius: 12 }}>
           <div className="ring" style={{ ["--p" as string]: pct }}><span>{pct}%</span></div>

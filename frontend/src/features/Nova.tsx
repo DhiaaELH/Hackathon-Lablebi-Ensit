@@ -39,12 +39,14 @@ const SUGGESTIONS: Record<string, { text: string; mode: NovaMode }[]> = {
   derja: [{ text: "فسّرلي الفصل الأول", mode: "ask" }, { text: "شنوّة لازمني نعرف قبل؟", mode: "ask" }, { text: "اسألني سؤال باش نثبّت", mode: "socratic" }],
 };
 
-export function NovaPanel({ courseId, refs, request, onOpenTab, onClose }: {
+export function NovaPanel({ courseId, refs, request, onOpenTab, onClose, full, onToggleFull }: {
   courseId: string;
   refs: Record<string, RefT> | undefined;
   request: NovaRequest | null;
   onOpenTab: (tab: string) => void;
   onClose?: () => void;
+  full?: boolean;
+  onToggleFull?: () => void;
 }) {
   const { t, lang } = useI18n();
   const history = useNovaHistory(courseId);
@@ -114,6 +116,25 @@ export function NovaPanel({ courseId, refs, request, onOpenTab, onClose }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request]);
 
+  async function clearChat() {
+    if (!confirm(t("clearChatConfirm"))) return;
+    try {
+      await api.del(`/api/courses/${courseId}/nova/history`);
+      qc.setQueryData(qk.nova(courseId), []);
+      setLines([]);
+      setFailed(null);
+      setHintLevel(1);
+      lastQuestion.current = "";
+    } catch (e) {
+      setLines((l) => [...l, { key: `e${Date.now()}`, role: "assistant", agent: "nova", text: `${t("error")}: ${(e as Error).message}`, citations: [] }]);
+    }
+  }
+  // Only Nova and Sam are personas; every other background role is shown by what it does.
+  const who = (agent: string | null | undefined) => {
+    const a = agent ?? "nova";
+    return a === "nova" || a === "sam" ? AGENT_NAME[a] : `Nova · ${t(`agent_${a}` as MessageKey)}`;
+  };
+
   function submit(e: FormEvent) {
     e.preventDefault();
     const msg = text.trim() || (mode === "alternate" || mode === "hint" ? lastQuestion.current : "");
@@ -132,9 +153,17 @@ export function NovaPanel({ courseId, refs, request, onOpenTab, onClose }: {
         <span className={`nova-orb${busy ? " busy" : ""}`} aria-hidden="true" />
         <div>
           <strong style={{ fontFamily: "var(--display)", fontSize: "1.05rem" }}>Nova</strong>
-          <div className="tiny muted">Sam · Clara · Alex · Quinn · Sage · Max · Jordan</div>
+          <div className="tiny muted">{t("novaSub")}</div>
         </div>
-        {onClose && <button type="button" className="btn btn-ghost btn-icon nova-close" onClick={onClose} aria-label={t("close")}><Icon name="x" size={18} /></button>}
+        <div className="nova-head-actions">
+          {lines.length > 0 && <button type="button" className="btn btn-ghost btn-icon" onClick={clearChat} disabled={busy} aria-label={t("clearChat")} title={t("clearChat")}><Icon name="trash" size={17} /></button>}
+          {onToggleFull && (
+            <button type="button" className="btn btn-ghost btn-icon" onClick={onToggleFull} aria-pressed={!!full} aria-label={t(full ? "exitFullscreen" : "fullscreen")} title={t(full ? "exitFullscreen" : "fullscreen")}>
+              <Icon name={full ? "shrink" : "expand"} size={17} />
+            </button>
+          )}
+          {onClose && <button type="button" className="btn btn-ghost btn-icon nova-close" onClick={onClose} aria-label={t("close")}><Icon name="x" size={18} /></button>}
+        </div>
       </div>
       <div className="nova-log" ref={logRef} aria-live="polite">
         <div className="msg msg-bot" style={{ borderStyle: "dashed" }}>{t("novaHello")}{lang === "derja" && <div className="small muted" style={{ marginTop: 6 }}>{t("derjaNote")}</div>}</div>
@@ -142,8 +171,8 @@ export function NovaPanel({ courseId, refs, request, onOpenTab, onClose }: {
           <div key={l.key} className={`msg ${l.role === "user" ? "msg-user" : "msg-bot"}`}>
             {l.role === "assistant" && (
               <div className="handoff">
-                <span className="avatar" style={{ width: 18, height: 18, fontSize: 9, display: "inline-grid", marginInlineEnd: 4 }} aria-hidden="true">{AGENT_INITIAL[l.agent ?? "nova"]}</span>
-                {l.handoff ?? AGENT_NAME[l.agent ?? "nova"]}
+                <span className="avatar" style={{ width: 18, height: 18, fontSize: 9, display: "inline-grid", marginInlineEnd: 4 }} aria-hidden="true">{AGENT_INITIAL[l.agent === "sam" ? "sam" : "nova"]}</span>
+                {who(l.agent)}
                 {l.demo && <span className="badge badge-warning" style={{ marginInlineStart: 6 }}>{t("demo")}</span>}
                 {l.supported === false && <span className="badge badge-error" style={{ marginInlineStart: 6 }}>{t("notInCourse")}</span>}
               </div>

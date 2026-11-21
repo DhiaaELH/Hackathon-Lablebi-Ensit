@@ -309,3 +309,32 @@ def delete_course(course_id: uuid.UUID, user=Depends(current_user), db: Session 
     db.delete(course)
     db.commit()
     return {"ok": True}
+
+
+@router.delete("/courses/{course_id}/enroll")
+def leave_course(course_id: uuid.UUID, user=Depends(current_user), db: Session = Depends(get_db)):
+    """Remove a course the user joined from their account. Owners delete the course instead."""
+    course = get_readable_course(db, user, course_id)
+    if course.owner_id == user.id:
+        raise HTTPException(400, "You own this course: delete it instead of leaving it")
+    m = db.get(CourseMember, (course.id, user.id))
+    if m:
+        db.delete(m)
+        db.commit()
+    return {"ok": True}
+
+
+@router.delete("/courses/{course_id}/resources/{resource_id}")
+def delete_resource(course_id: uuid.UUID, resource_id: uuid.UUID, user=Depends(current_user), db: Session = Depends(get_db)):
+    """Remove one piece of uploaded material (and its passages). Generated content stays until the course is regenerated."""
+    from pathlib import Path
+
+    course = get_owned_course(db, user, course_id)
+    r = db.get(Resource, resource_id)
+    if not r or r.course_id != course.id:
+        raise HTTPException(404, "Not found")
+    if r.storage_path:
+        Path(r.storage_path).unlink(missing_ok=True)
+    db.delete(r)
+    db.commit()
+    return {"ok": True}

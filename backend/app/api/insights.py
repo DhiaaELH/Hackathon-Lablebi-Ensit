@@ -82,3 +82,21 @@ def mark_read(notification_id: uuid.UUID, user=Depends(current_user), db: Sessio
     n.read_at = datetime.now(timezone.utc)
     db.commit()
     return {"ok": True}
+
+
+@router.delete("/notifications/{notification_id}")
+def delete_notification(notification_id: uuid.UUID, user=Depends(current_user), db: Session = Depends(get_db)):
+    n = db.get(Notification, notification_id)
+    if not n or n.user_id != user.id:
+        raise HTTPException(404, "Not found")
+    db.delete(n)
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/notifications")
+def clear_notifications(user=Depends(current_user), db: Session = Depends(get_db)):
+    for n in db.scalars(select(Notification).where(Notification.user_id == user.id)):
+        db.delete(n)
+    db.commit()
+    return {"ok": True}

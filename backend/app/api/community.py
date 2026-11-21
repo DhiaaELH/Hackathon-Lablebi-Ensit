@@ -8,8 +8,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..models import Chapter, ContentReport, HardChapterVote, Post, Profile, Thread, Vote
-from ..security import current_user, get_readable_course, rate_limit, role_of
+from ..models import Chapter, ContentReport, Course, HardChapterVote, Post, Profile, Thread, Vote
+from ..security import course_access, current_user, get_readable_course, rate_limit, role_of
 
 router = APIRouter(prefix="/api", tags=["community"])
 
@@ -25,6 +25,19 @@ def _chapter(db: Session, user, chapter_id: uuid.UUID) -> Chapter:
 def _author(db: Session, uid) -> dict:
     p = db.get(Profile, uid)
     return {"display_name": p.display_name if p else "?", "role": p.role if p else "student"}
+
+
+STAFF = ("senior", "teacher", "admin")  # peer tutors and teachers help run the discussions
+
+
+def _can_remove(db: Session, user, t: Thread, author_id) -> bool:
+    """Authors remove their own content; admins anything; a teacher anything in a course they own or teach."""
+    if author_id == user.id or role_of(user) == "admin":
+        return True
+    if role_of(user) != "teacher":
+        return False
+    course = db.get(Course, t.course_id)
+    return bool(course) and course_access(db, user, course) in ("owner", "teacher")
 
 
 class ThreadIn(BaseModel):
@@ -78,10 +91,12 @@ def get_thread(thread_id: uuid.UUID, user=Depends(current_user), db: Session = D
     scores = dict(db.execute(select(Vote.post_id, func.coalesce(func.sum(Vote.value), 0)).where(Vote.post_id.in_([p.id for p in posts])).group_by(Vote.post_id)).all())
     mine = dict(db.execute(select(Vote.post_id, Vote.value).where(Vote.user_id == user.id, Vote.post_id.in_([p.id for p in posts]))).all())
     items = [{"id": str(p.id), "body": p.body, "author": _author(db, p.author_id), "accepted": p.accepted, "score": int(scores.get(p.id, 0)),
-              "my_vote": mine.get(p.id, 0), "at": p.created_at.isoformat()} for p in posts]
+              "my_vote": mine.get(p.id, 0), "at": p.created_at.isoformat(),
+              "can_delete": _can_remove(db, user, t, p.author_id)} for p in posts]
     items.sort(key=lambda x: (not x["accepted"], -x["score"], x["at"]))
     return {"id": str(t.id), "title": t.title, "body": t.body, "author": _author(db, t.author_id), "chapter_id": str(t.chapter_id),
-            "can_accept": t.author_id == user.id or role_of(user) in ("teacher", "admin"), "posts": items, "is_demo": t.is_demo}
+            "can_accept": t.author_id == user.id or role_of(user) in STAFF, "posts": items, "is_demo": t.is_demo,
+            "pinned": t.pinned, "can_pin": role_of(user) in STAFF, "can_delete": _can_remove(db, user, t, t.author_id)}
 
 
 @router.post("/threads/{thread_id}/posts", dependencies=[Depends(rate_limit("post", 20, 600))])
@@ -125,12 +140,50 @@ def vote(post_id: uuid.UUID, body: VoteIn, user=Depends(current_user), db: Sessi
 @router.post("/posts/{post_id}/accept")
 def accept(post_id: uuid.UUID, user=Depends(current_user), db: Session = Depends(get_db)):
     p, t = _post(db, user, post_id)
-    if t.author_id != user.id and role_of(user) not in ("teacher", "admin"):
-        raise HTTPException(403, "Only the question author or a teacher can accept an answer")
+    if t.author_id != user.id and role_of(user) not in STAFF:
+        raise HTTPException(403, "Only the question author, a peer tutor or a teacher can accept an answer")
     for other in db.scalars(select(Post).where(Post.thread_id == t.id)):
         other.accepted = other.id == p.id
     db.commit()
     return {"ok": True}
+
+
+@router.delete("/posts/{post_id}")
+def delete_post(post_id: uuid.UUID, user=Depends(current_user), db: Session = Depends(get_db)):
+    p, t = _post(db, user, post_id)
+    if not _can_remove(db, user, t, p.author_id):
+        raise HTTPException(403, "You cannot remove this answer")
+    db.delete(p)
+    db.commit()
+    return {"ok": True}
+
+
+def _thread(db: Session, user, thread_id: uuid.UUID) -> Thread:
+    t = db.get(Thread, thread_id)
+    if not t:
+        raise HTTPException(404, "Not found")
+    get_readable_course(db, user, t.course_id)
+    return t
+
+
+@router.delete("/threads/{thread_id}")
+def delete_thread(thread_id: uuid.UUID, user=Depends(current_user), db: Session = Depends(get_db)):
+    t = _thread(db, user, thread_id)
+    if not _can_remove(db, user, t, t.author_id):
+        raise HTTPException(403, "You cannot remove this discussion")
+    db.delete(t)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/threads/{thread_id}/pin")
+def pin_thread(thread_id: uuid.UUID, user=Depends(current_user), db: Session = Depends(get_db)):
+    t = _thread(db, user, thread_id)
+    if role_of(user) not in STAFF:
+        raise HTTPException(403, "Only peer tutors and teachers can pin a discussion")
+    t.pinned = not t.pinned
+    db.commit()
+    return {"pinned": t.pinned}
 
 
 @router.post("/chapters/{chapter_id}/hard")

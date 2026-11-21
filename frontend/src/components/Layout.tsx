@@ -75,7 +75,7 @@ export function Layout() {
                 <span className="avatar">{initials(me.data.display_name)}</span>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="small" style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{me.data.display_name}</div>
-                  <div className="tiny muted">@{me.data.username} · {me.data.role}</div>
+                  <div className="tiny muted" title={t(`roleHint_${me.data.role}` as MessageKey)}>@{me.data.username} · {t(`role_${me.data.role}` as MessageKey)}</div>
                 </div>
               </div>
             )}

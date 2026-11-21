@@ -44,7 +44,7 @@ export function ProjectsTab({ course }: { course: CourseDetail }) {
           </div>
           {!ch.unlocked && <p className="muted small" style={{ margin: 0 }}>{t("lockedProjects")}</p>}
           {ch.unlocked && ch.projects.length === 0 && (
-            <div><button className="btn btn-primary btn-sm" disabled={busy === ch.chapter_id} onClick={() => generate(ch.chapter_id)}>{t("suggestProjects")} (Alex)</button></div>
+            <div><button className="btn btn-primary btn-sm" disabled={busy === ch.chapter_id} onClick={() => generate(ch.chapter_id)}>{t("suggestProjects")}</button></div>
           )}
           {ch.projects.filter((pr) => pr.status !== "dismissed").map((pr) => (
             <div key={pr.id} className="section-block stack">

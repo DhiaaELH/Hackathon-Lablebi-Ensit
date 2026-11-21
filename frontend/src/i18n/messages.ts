@@ -1,5 +1,6 @@
 import type { Lang } from "../api/types";
 import { EXTRA_AR, EXTRA_DERJA, EXTRA_EN, EXTRA_FR } from "./extra";
+import { MORE_AR, MORE_EN, MORE_FR } from "./more";
 
 /** UI strings. Derja translations are best-effort and should be reviewed by native speakers. */
 const fr = {
@@ -183,7 +184,8 @@ const derja: Messages = {
   derjaNote: "الدارجة في التجربة: تنجم تصير أغلاط، والكلمات التقنية بالفرنسي تقعد بين قوسين.",
 };
 
-export const MESSAGES = { fr: { ...fr, ...EXTRA_FR }, en: { ...en, ...EXTRA_EN }, ar: { ...ar, ...EXTRA_AR }, derja: { ...derja, ...EXTRA_DERJA } };
+export const MESSAGES = { fr: { ...fr, ...EXTRA_FR, ...MORE_FR }, en: { ...en, ...EXTRA_EN, ...MORE_EN }, ar: { ...ar, ...EXTRA_AR, ...MORE_AR },
+  derja: { ...MORE_AR, ...derja, ...EXTRA_DERJA, mapHelp: MORE_AR.mapHelp, quality_pass: MORE_AR.quality_pass } };
 export type MessageKey = keyof (typeof MESSAGES)["fr"];
 export const LANG_LABEL: Record<Lang, string> = { fr: "Français", en: "English", ar: "العربية", derja: "الدارجة" };
 export const isRtl = (l: Lang) => l === "ar" || l === "derja";

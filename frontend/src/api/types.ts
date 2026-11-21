@@ -177,7 +177,10 @@ export interface ThreadDetail {
   chapter_id: string;
   can_accept: boolean;
   is_demo: boolean;
-  posts: { id: string; body: string; author: { display_name: string; role: Role }; accepted: boolean; score: number; my_vote: number; at: string }[];
+  posts: { id: string; body: string; author: { display_name: string; role: Role }; accepted: boolean; score: number; my_vote: number; at: string; can_delete?: boolean }[];
+  pinned?: boolean;
+  can_pin?: boolean;
+  can_delete?: boolean;
 }
 
 export interface Insights {
@@ -222,3 +225,7 @@ export interface DueCards { due: DueCard[]; upcoming: number; total: number; nex
 export interface QueueItem { course_id: string; course: string; chapter_id: string; chapter: string; section_id: string; section: string; students: number; top_reason: string | null }
 export interface ReportT { id: string; target_type: string; target_id: string; reason: string; status: string; preview: string | null; at: string }
 export interface Suggestion extends PublicProfile { reason: string; reasons: { code: string; args: Record<string, string | number> }[]; score: number }
+
+export interface MemberT { username: string; display_name: string; role: Role; member_role: "student" | "teacher" }
+export interface AdminUser { username: string; display_name: string; email: string; role: Role; is_demo: boolean; courses: number; created_at: string }
+export interface AdminStats { users: Record<Role, number>; courses: number; published: number; attempts: number; open_reports: number }

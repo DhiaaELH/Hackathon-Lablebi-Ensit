@@ -33,6 +33,13 @@ const PATHS: Record<string, string> = {
   logout: "M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10",
   file: "M6 3h8l4 4v14H6zM14 3v4h4",
   video: "M3 6h12v12H3zM15 10l6-3v10l-6-3",
+  trash: "M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 11v5M14 11v5",
+  expand: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5",
+  shrink: "M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5",
+  clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2",
+  pin: "M9 4h6l-1 6 3 3H7l3-3zM12 13v7",
+  minus: "M5 12h14",
+  list: "M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01",
   wand: "M4 20L15 9M14 4v3M18 6l-2 2M20 10h-3M9 5.5L10 4M18.5 14l1.5 1",
 };
 

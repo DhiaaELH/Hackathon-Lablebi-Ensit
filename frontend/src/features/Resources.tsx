@@ -70,6 +70,7 @@ function Shared({ course }: { course: CourseDetail }) {
             <button className="btn btn-sm" disabled={r.mine} aria-pressed={r.my_rating === true} onClick={() => rate(r.id, r.my_rating === true ? null : true)}><Icon name="up" size={13} /> {t("helpful")} · {r.helpful}</button>
             <button className="btn btn-sm btn-ghost" disabled={r.mine} aria-pressed={r.my_rating === false} onClick={() => rate(r.id, r.my_rating === false ? null : false)}>{t("notHelpful")} · {r.not_helpful}</button>
             <button className="btn btn-sm btn-ghost" onClick={async () => { const reason = prompt(t("report")); if (reason) { await api.post("/api/reports", { target_type: "resource", target_id: r.id, reason }); toast(t("toastSent")); } }}><Icon name="flag" size={13} /></button>
+            {r.mine && <button className="btn btn-sm btn-ghost btn-danger" style={{ marginInlineStart: "auto" }} onClick={async () => { if (confirm(t("confirmDelete"))) { await api.del(`/api/shared/${r.id}`); await list.refetch(); toast(t("removedOk")); } }}><Icon name="trash" size={13} /> {t("deleteIt")}</button>}
           </div>
         </article>
       ))}
@@ -169,7 +170,7 @@ function Glossary({ course }: { course: CourseDetail }) {
           </tbody>
         </table>
       </div>
-      <span className="tiny muted">Riley checks AI terminology against reviewed terms.</span>
+      <span className="tiny muted">{t("glossaryCheck")}</span>
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
-import { qk, useCourse, useHealth, useInvalidate, useProgress } from "../api/hooks";
+import { qk, useCourse, useHealth, useInvalidate, useMe, useProgress } from "../api/hooks";
 import { Icon } from "../components/Icon";
 import { useToast } from "../components/Toast";
 import { ErrorBox, Tabs } from "../components/ui";
+import { ClassTab } from "../features/ClassTab";
 import { Community } from "../features/Community";
 import { ExamsTab } from "../features/Exams";
 import { NovaPanel, type NovaRequest } from "../features/Nova";
@@ -18,7 +19,7 @@ import { TopicMap } from "../features/TopicMap";
 import { useI18n } from "../i18n/I18n";
 import { WorkflowProgress } from "./CourseSetup";
 
-const TABS = ["overview", "practice", "revision", "map", "resources", "exams", "projects", "progress", "community"] as const;
+const TABS = ["overview", "practice", "revision", "map", "resources", "exams", "projects", "progress", "community", "class"] as const;
 type Tab = (typeof TABS)[number];
 
 function PublishControl({ courseId, visibility }: { courseId: string; visibility: string }) {
@@ -87,6 +88,9 @@ export function CoursePage() {
   const [params, setParams] = useSearchParams();
   const course = useCourse(id);
   const progress = useProgress(id);
+  const me = useMe();
+  const nav = useNavigate();
+  const toast = useToast();
   const urlTab = params.get("tab") as Tab | null;
   const [tab, setTabState] = useState<Tab>(urlTab && TABS.includes(urlTab) ? urlTab : "overview");
   const [focusSection, setFocusSection] = useState<string | null>(params.get("section"));
@@ -98,14 +102,22 @@ export function CoursePage() {
     setNovaOpenState(open);
     if (isWide()) writeNovaPref(open);
   }, []);
+  const [novaFull, setNovaFull] = useState(false);
+  // While Nova covers the page (drawer on phones, or full screen anywhere) the page behind must not scroll.
+  useEffect(() => {
+    if (!novaOpen) { setNovaFull(false); return; }
+    if (!novaFull && isWide()) return;
+    document.body.classList.add("no-scroll");
+    return () => document.body.classList.remove("no-scroll");
+  }, [novaOpen, novaFull]);
   const invalidate = useInvalidate();
   const ask = useCallback((r: Omit<NovaRequest, "nonce">) => { setNovaReq({ ...r, nonce: Date.now() }); setNovaOpen(true); }, [setNovaOpen]);
   useEffect(() => {
     if (!novaOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setNovaOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { if (novaFull) setNovaFull(false); else setNovaOpen(false); } };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [novaOpen, setNovaOpen]);
+  }, [novaOpen, novaFull, setNovaOpen]);
   const onWorkflowDone = useCallback(
     () => invalidate([...qk.course(id)], [...qk.assessments(id)], [...qk.revision(id)], [...qk.progress(id)]),
     [id, invalidate],
@@ -130,10 +142,26 @@ export function CoursePage() {
   const pct = progress.data?.sections_total ? Math.round((progress.data.sections_done / progress.data.sections_total) * 100) : 0;
   const labels: Record<Tab, [string, string]> = {
     overview: [t("overview"), "book"], practice: [t("practice"), "wand"], revision: [t("revision"), "layers"], map: [t("map"), "map"],
-    resources: [t("resourcesTab"), "link"], exams: [t("exams"), "file"], projects: [t("projects"), "compass"], progress: [t("progress"), "pulse"], community: [t("community"), "users"],
+    resources: [t("resourcesTab"), "link"], exams: [t("exams"), "file"], projects: [t("projects"), "compass"], progress: [t("progress"), "pulse"], community: [t("community"), "users"], class: [t("classTab"), "shield"],
   };
+  // A course is a classroom for the teachers who own or co-teach it.
+  const canTeach = (me.data?.role === "teacher" || me.data?.role === "admin") && (c.access === "owner" || c.access === "teacher");
+  const tabs = TABS.filter((x) => x !== "class" || canTeach);
+  const shown: Tab = tabs.includes(tab) ? tab : "overview";
+  async function removeCourse() {
+    const mine = c.access === "owner";
+    if (!confirm(t(mine ? "deleteCourseConfirm" : "removeCourseConfirm"))) return;
+    try {
+      await api.del(mine ? `/api/courses/${c.id}` : `/api/courses/${c.id}/enroll`);
+      await invalidate([...qk.courses]);
+      toast(t("removedOk"));
+      nav("/");
+    } catch (e) {
+      toast((e as Error).message, "err");
+    }
+  }
   // on phones the drawer covers the tab Nova points to, so close it; on desktop keep the side panel open
-  const openTab = (name: string) => { if ((TABS as readonly string[]).includes(name)) { setTab(name as Tab); if (!isWide()) setNovaOpen(false); } };
+  const openTab = (name: string) => { if ((TABS as readonly string[]).includes(name)) { setTab(name as Tab); setNovaFull(false); if (!isWide()) setNovaOpen(false); } };
 
   return (
     <div className="course-page">
@@ -154,26 +182,30 @@ export function CoursePage() {
           {c.access === "owner" && <Link className="btn btn-sm" to={`/courses/${c.id}/setup`}><Icon name="plus" size={14} /> {t("addMaterial")}</Link>}
           {(c.access === "owner" || c.access === "teacher") && !processing && <RegenerateButton courseId={c.id} />}
           {c.access === "owner" && <PublishControl courseId={c.id} visibility={c.visibility} />}
+          {(c.access === "member" || c.access === "teacher") && <button className="btn btn-sm" onClick={removeCourse}><Icon name="x" size={14} /> {t("removeCourse")}</button>}
+          {c.access === "owner" && <button className="btn btn-sm btn-danger btn-icon" onClick={removeCourse} aria-label={t("deleteCourse")} title={t("deleteCourse")}><Icon name="trash" size={15} /></button>}
         </div>
       </div>
       {c.workflow && (processing || (c.workflow.status === "partial" && (c.access === "owner" || c.access === "teacher"))) && (
         <WorkflowProgress workflowId={c.workflow.id} onDone={onWorkflowDone} canRetry={c.access === "owner" || c.access === "teacher"} />
       )}
-      <Tabs tabs={TABS.map((x) => ({ id: x, label: labels[x][0], icon: labels[x][1] }))} value={tab} onChange={setTab} />
+      <Tabs tabs={tabs.map((x) => ({ id: x, label: labels[x][0], icon: labels[x][1] }))} value={shown} onChange={setTab} />
       <div className={`workspace${novaOpen ? " nova-is-open" : " nova-is-closed"}`}>
         <div className="workspace-main">
-          {tab === "overview" && <Overview course={c} focusSection={focusSection} />}
-          {tab === "practice" && <Practice course={c} ask={ask} />}
-          {tab === "revision" && <RevisionTab course={c} />}
-          {tab === "map" && <TopicMap course={c} onOpenSection={openSection} />}
-          {tab === "resources" && <ResourcesTab course={c} />}
-          {tab === "exams" && <ExamsTab course={c} />}
-          {tab === "projects" && <ProjectsTab course={c} />}
-          {tab === "progress" && <ProgressTab course={c} />}
-          {tab === "community" && <Community course={c} initialChapter={params.get("chapter")} />}
+          {shown === "overview" && <Overview course={c} focusSection={focusSection} />}
+          {shown === "practice" && <Practice course={c} ask={ask} />}
+          {shown === "revision" && <RevisionTab course={c} />}
+          {shown === "map" && <TopicMap course={c} onOpenSection={openSection} />}
+          {shown === "resources" && <ResourcesTab course={c} />}
+          {shown === "exams" && <ExamsTab course={c} />}
+          {shown === "projects" && <ProjectsTab course={c} />}
+          {shown === "progress" && <ProgressTab course={c} />}
+          {shown === "community" && <Community course={c} initialChapter={params.get("chapter")} />}
+          {shown === "class" && <ClassTab course={c} />}
         </div>
-        <div className={`nova-dock${novaOpen ? " open" : ""}`}>
-          <NovaPanel courseId={c.id} refs={c.refs} request={novaReq} onOpenTab={openTab} onClose={() => setNovaOpen(false)} />
+        <div className={`nova-dock${novaOpen ? " open" : ""}${novaOpen && novaFull ? " full" : ""}`}>
+          <NovaPanel courseId={c.id} refs={c.refs} request={novaReq} onOpenTab={openTab} onClose={() => setNovaOpen(false)}
+            full={novaFull} onToggleFull={() => setNovaFull((f) => !f)} />
         </div>
       </div>
       <div className={`nova-scrim${novaOpen ? " open" : ""}`} onClick={() => setNovaOpen(false)} aria-hidden="true" />

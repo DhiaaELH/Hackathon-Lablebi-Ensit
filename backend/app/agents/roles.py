@@ -149,7 +149,7 @@ def riley_review(db: Session, course: Course, lang: str, kind: str, payload: dic
     findings = riley_rules(kind, payload, refs, concept_keys)
     high = any(f["severity"] == "high" for f in findings)
     if is_demo():
-        findings.append({"severity": "low", "item": "Riley", "issue": "Rule checks only: AI quality review not run in demo mode."})
+        findings.append({"severity": "low", "item": "Quality check", "issue": "Rule checks only: AI quality review not run in demo mode."})
         return ("revise" if high else "unverified"), findings
     from ..models import GlossaryTerm
 
@@ -162,7 +162,7 @@ def riley_review(db: Session, course: Course, lang: str, kind: str, payload: dic
     try:
         report, _ = get_provider().structured("riley", _shared_prefix(db, course), [{"role": "user", "content": user}], QualityReport, effort="low")
     except Exception:
-        findings.append({"severity": "low", "item": "Riley", "issue": "Quality checker unavailable; content is provisional."})
+        findings.append({"severity": "low", "item": "Quality check", "issue": "Quality checker unavailable; content is provisional."})
         return "unverified", findings
     findings += [f.model_dump() for f in report.findings]
     verdict = "revise" if high else report.verdict

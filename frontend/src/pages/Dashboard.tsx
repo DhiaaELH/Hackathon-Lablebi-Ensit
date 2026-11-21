@@ -10,13 +10,19 @@ import { WhoToFollow } from "../features/WhoToFollow";
 import { useI18n } from "../i18n/I18n";
 import { LANG_LABEL, type MessageKey } from "../i18n/messages";
 
-export function CourseTile({ c, action }: { c: CourseCard; action?: ReactNode }) {
+export function CourseTile({ c, action, onRemove }: { c: CourseCard; action?: ReactNode; onRemove?: () => void }) {
   const { t } = useI18n();
   const hue = [...c.title].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 360, 7);
   return (
     <div className="card card-hover stack" style={{ position: "relative", overflow: "hidden" }}>
       <div aria-hidden="true" style={{ position: "absolute", insetInlineEnd: -18, top: -18, width: 86, height: 86, borderRadius: "50%",
         background: `hsl(${hue} 30% 88%)`, opacity: 0.7 }} />
+      {onRemove && (
+        <button type="button" className="btn btn-sm btn-ghost btn-icon tile-remove" onClick={onRemove}
+          aria-label={`${t(c.access === "owner" ? "deleteCourse" : "removeCourse")} — ${c.title}`} title={t(c.access === "owner" ? "deleteCourse" : "removeCourse")}>
+          <Icon name={c.access === "owner" ? "trash" : "x"} size={15} />
+        </button>
+      )}
       <span className="eyebrow">{LANG_LABEL[c.language]} · {c.chapter_count} ch.</span>
       <h3 style={{ margin: 0, fontFamily: "var(--display)", fontSize: "1.12rem", position: "relative" }}>{c.title.replace("[DÉMO] ", "")}</h3>
       <div className="row small">
@@ -96,6 +102,18 @@ export function Dashboard() {
   const [err, setErr] = useState<unknown>(null);
   const nav = useNavigate();
   const invalidate = useInvalidate();
+  const toast = useToast();
+  async function removeCourse(c: CourseCard) {
+    const mine = c.access === "owner";
+    if (!confirm(`${c.title.replace("[DÉMO] ", "")}\n\n${t(mine ? "deleteCourseConfirm" : "removeCourseConfirm")}`)) return;
+    try {
+      await api.del(mine ? `/api/courses/${c.id}` : `/api/courses/${c.id}/enroll`);
+      await invalidate([...qk.courses], [...qk.recs]);
+      toast(t("removedOk"));
+    } catch (e) {
+      toast((e as Error).message, "err");
+    }
+  }
   const first = me.data?.display_name.replace(/\(.*?\)/g, "").trim().split(" ")[0];
   const recent = courses.data?.[0];
 
@@ -161,7 +179,7 @@ export function Dashboard() {
         {courses.isLoading && <div className="grid grid-2">{[0, 1, 2].map((i) => <div key={i} className="card skeleton" style={{ height: 150 }} />)}</div>}
         {courses.error && <ErrorBox error={courses.error} />}
         {courses.data && courses.data.length === 0 && <Empty>{t("noCourses")}</Empty>}
-        <div className="grid grid-2">{courses.data?.map((c) => <CourseTile key={c.id} c={c} />)}</div>
+        <div className="grid grid-2">{courses.data?.map((c) => <CourseTile key={c.id} c={c} onRemove={() => removeCourse(c)} />)}</div>
       </section>
     </div>
   );

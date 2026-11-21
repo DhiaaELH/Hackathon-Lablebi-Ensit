@@ -31,7 +31,14 @@ function ThreadView({ id, onBack }: { id: string; onBack: () => void }) {
     <div className="stack">
       <button className="btn btn-sm btn-ghost" style={{ alignSelf: "flex-start" }} onClick={onBack}><Icon name="back" size={14} /> {t("threads")}</button>
       <div className="card stack">
-        <h2 style={{ margin: 0 }}>{th.data.title}</h2>
+        <div className="row between" style={{ flexWrap: "nowrap", alignItems: "flex-start" }}>
+          <h2 style={{ margin: 0 }}>{th.data.pinned && <Icon name="pin" size={16} />} {th.data.title}</h2>
+          <div className="row" style={{ flexWrap: "nowrap" }}>
+            {th.data.can_pin && <button className="btn btn-sm" onClick={() => act(() => api.post(`/api/threads/${id}/pin`))}><Icon name="pin" size={13} /> {t(th.data.pinned ? "unpin" : "pin")}</button>}
+            {th.data.can_delete && <button className="btn btn-sm btn-danger btn-icon" aria-label={t("deleteIt")} title={t("deleteIt")}
+              onClick={async () => { if (!confirm(t("confirmDelete"))) return; try { await api.del(`/api/threads/${id}`); onBack(); } catch (e) { setErr(e); } }}><Icon name="trash" size={14} /></button>}
+          </div>
+        </div>
         <span className="small muted">{th.data.author.display_name} · {th.data.author.role}</span>
         <Rich as="div" text={th.data.body} />
       </div>
@@ -47,6 +54,7 @@ function ThreadView({ id, onBack }: { id: string; onBack: () => void }) {
             <span>{p.score}</span>
             {th.data!.can_accept && !p.accepted && <button className="btn btn-sm" onClick={() => act(() => api.post(`/api/posts/${p.id}/accept`))}>{t("accept")}</button>}
             <button className="btn btn-sm btn-ghost" onClick={() => { const reason = prompt(t("report")); if (reason) act(() => api.post("/api/reports", { target_type: "post", target_id: p.id, reason })); }}>{t("report")}</button>
+            {p.can_delete && <button className="btn btn-sm btn-ghost btn-danger" style={{ marginInlineStart: "auto" }} onClick={() => { if (confirm(t("confirmDelete"))) act(() => api.del(`/api/posts/${p.id}`)); }}><Icon name="trash" size={13} /> {t("deleteIt")}</button>}
           </div>
         </div>
       ))}
@@ -154,7 +162,7 @@ function Threads({ course, initialChapter }: { course: CourseDetail; initialChap
       {threads.data?.length === 0 && <Empty>—</Empty>}
       {threads.data?.map((th) => (
         <button key={th.id} className="card stack" style={{ textAlign: "start", font: "inherit", cursor: "pointer", width: "100%" }} onClick={() => setThread(th.id)}>
-          <strong>{th.title}</strong>
+          <strong>{th.pinned && <Icon name="pin" size={14} />} {th.title}</strong>
           <span className="row small muted">{th.author.display_name} · {th.replies} {t("replies")} {th.solved && <span className="badge badge-success">{t("solved")}</span>}</span>
         </button>
       ))}

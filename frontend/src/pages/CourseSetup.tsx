@@ -4,13 +4,14 @@ import { api } from "../api/client";
 import { qk, useCourse, useInvalidate, useWorkflow } from "../api/hooks";
 import type { ResourceT } from "../api/types";
 import { Icon } from "../components/Icon";
-import { AGENT_INITIAL, AGENT_NAME, ErrorBox, Spinner, Tabs } from "../components/ui";
+import { AgentAvatar, ErrorBox, Spinner, Tabs, useAgentLabel } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 
 export function WorkflowProgress({ workflowId, onDone, canRetry = true }: { workflowId: string; onDone?: () => void; canRetry?: boolean }) {
   const { t } = useI18n();
   const [active, setActive] = useState(true);
   const wf = useWorkflow(workflowId, active);
+  const agentLabel = useAgentLabel();
   const finished = wf.data && ["done", "partial", "failed"].includes(wf.data.status);
   const fired = useRef(false);
   useEffect(() => {
@@ -30,15 +31,15 @@ export function WorkflowProgress({ workflowId, onDone, canRetry = true }: { work
       <div className="row">
         {wf.data.tasks.map((task) => (
           <span key={task.id} className={`badge ${task.status === "done" ? "badge-success" : task.status === "failed" || task.status === "needs_review" ? "badge-error" : ""}`}>
-            {AGENT_NAME[task.agent_role]} · {task.status}{task.retry_count ? ` (retry ${task.retry_count})` : ""}
+            {agentLabel(task.agent_role)} · {task.status}{task.retry_count ? ` (retry ${task.retry_count})` : ""}
           </span>
         ))}
       </div>
       <ol className="stack" style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {wf.data.events.map((e) => (
           <li key={e.id} className="row small">
-            <span className="avatar" aria-hidden="true">{AGENT_INITIAL[e.agent_role] ?? "?"}</span>
-            <span><strong>{AGENT_NAME[e.agent_role] ?? e.agent_role}</strong> — {e.message}</span>
+            <AgentAvatar role={e.agent_role} />
+            <span><strong>{agentLabel(e.agent_role)}</strong> — {e.message}</span>
           </li>
         ))}
       </ol>
@@ -50,7 +51,7 @@ export function WorkflowProgress({ workflowId, onDone, canRetry = true }: { work
             fired.current = false;
             setActive(true);
           }}><Icon name="wand" size={14} /> {t("retryFailed")}</button>
-          <span className="tiny muted">{wf.data.tasks.filter((x) => x.status === "failed").map((x) => AGENT_NAME[x.agent_role]).join(", ")}</span>
+          <span className="tiny muted">{wf.data.tasks.filter((x) => x.status === "failed").map((x) => agentLabel(x.agent_role)).join(", ")}</span>
         </div>
       )}
     </div>
@@ -112,8 +113,21 @@ export function CourseSetup() {
     }
   }
 
+  const [removed, setRemoved] = useState<string[]>([]);
+  async function removeResource(rid: string) {
+    if (!confirm(t("confirmDelete"))) return;
+    try {
+      await api.del(`/api/courses/${id}/resources/${rid}`);
+      setRemoved((x) => [...x, rid]);
+      await invalidate([...qk.course(id)]);
+    } catch (e) {
+      setErr(e);
+    }
+  }
+
   const resources = [...(course.data?.resources ?? [])];
   for (const a of added) if (!resources.some((r) => r.id === a.id)) resources.push(a);
+  for (const rid of removed) { const i = resources.findIndex((r) => r.id === rid); if (i >= 0) resources.splice(i, 1); }
 
   return (
     <div className="stack" style={{ maxWidth: 820, gap: "1rem" }}>
@@ -163,6 +177,8 @@ export function CourseSetup() {
                 <span>{r.filename}</span>
                 {r.page_count ? <span className="muted">{r.page_count} p.</span> : null}
                 {r.notes?.map((n, i) => <span key={i} className="muted">· {n}</span>)}
+                <button type="button" className="btn btn-sm btn-ghost btn-icon" style={{ marginInlineStart: "auto" }} onClick={() => removeResource(r.id)}
+                  aria-label={`${t("deleteIt")} ${r.filename}`} title={t("deleteIt")}><Icon name="trash" size={15} /></button>
               </div>
             ))}
           </div>

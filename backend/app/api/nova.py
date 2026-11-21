@@ -45,8 +45,16 @@ ROUTES = [
 HANDOFF = {
     "fr": "Je vérifie avec {name}…", "en": "Checking this with {name}…", "ar": "أتحقق من ذلك مع {name}…", "derja": "نثبّت مع {name}…",
 }
-NAMES = {"sam": "Sam (tutor)", "clara": "Clara (course analyst)", "alex": "Alex (practice & projects)", "quinn": "Quinn (quizzes)",
-         "sage": "Sage (revision)", "max": "Max (mock exam)", "resource_finder": "Resource Finder", "jordan": "Jordan (coordinator)", "riley": "Riley (quality)"}
+# Only the two personas the student talks to keep a name (Nova, Sam); background roles are described by what they do.
+NAMES = {"sam": "Sam", "clara": "the course analysis", "alex": "the practice exercises", "quinn": "the quizzes",
+         "sage": "the revision material", "max": "the mock exams", "resource_finder": "the resource search", "jordan": "the generation status",
+         "riley": "the quality check"}
+NAMES_FR = {"sam": "Sam", "clara": "l'analyse du cours", "alex": "les exercices", "quinn": "les quiz", "sage": "les fiches de révision",
+            "max": "les examens blancs", "resource_finder": "la recherche de ressources", "jordan": "l'état de la génération", "riley": "le contrôle qualité"}
+NAMES_AR = {"sam": "Sam", "clara": "تحليل الدرس", "alex": "التمارين", "quinn": "الاختبارات", "sage": "مواد المراجعة", "max": "الامتحانات التجريبية",
+            "resource_finder": "البحث عن المصادر", "jordan": "حالة التوليد", "riley": "مراقبة الجودة"}
+LABELS = {"fr": NAMES_FR, "en": NAMES, "ar": NAMES_AR, "derja": NAMES_AR}
+ITEMS = {"quinn": "quiz", "max": "mock exam", "alex": "exercise set"}
 
 
 def route(message: str, mode: str | None) -> list[str]:
@@ -95,21 +103,21 @@ def _specialist_summary(db: Session, course, role: str, message: str, lang: str,
         if not wf:
             return "No generation has been started for this course yet.", [], None
         tasks = db.scalars(select(AgentTask).where(AgentTask.workflow_id == wf.id)).all()
-        parts = ", ".join(f"{t.agent_role}: {t.status}" for t in tasks)
+        parts = ", ".join(f"{NAMES.get(t.agent_role, t.agent_role)}: {t.status}" for t in tasks)
         return f"Workflow status: {wf.status}. {parts}.", [], {"open": "overview"}
     if role == "sage":
         rev = db.scalar(select(AgentArtifact).where(AgentArtifact.course_id == course.id, AgentArtifact.kind == "revision"))
         if not rev:
-            return "Sage has not finished the revision material yet.", [], None
-        return (f"Sage prepared {len(rev.payload.get('summaries', []))} chapter summaries and {len(rev.payload.get('flashcards', []))} flashcards "
+            return "The revision material is not ready yet.", [], None
+        return (f"There are {len(rev.payload.get('summaries', []))} chapter summaries and {len(rev.payload.get('flashcards', []))} flashcards "
                 f"(quality: {rev.quality_status}). Open the Revision tab to read them, flip flashcards or download the PDF."), [], {"open": "revision"}
     if role in ("quinn", "max", "alex"):
         kind = {"quinn": "chapter_quiz", "max": "mock_exam", "alex": "exercise"}[role]
         items = db.scalars(select(Assessment).where(Assessment.course_id == course.id, Assessment.kind == kind)).all()
         if not items:
-            return f"{NAMES[role]} has nothing ready yet for this course.", [], None
+            return f"No {ITEMS[role]} is ready yet for this course.", [], None
         extra = " Applied projects unlock when you complete a chapter." if role == "alex" else ""
-        return f"{NAMES[role]} has {len(items)} item(s) ready: " + "; ".join(a.title for a in items[:5]) + "." + extra, [], {"open": "practice"}
+        return f"{len(items)} {ITEMS[role]}(s) ready: " + "; ".join(a.title for a in items[:5]) + "." + extra, [], {"open": "practice"}
     if role == "clara":
         concepts = db.scalars(select(Concept).where(Concept.course_id == course.id)).all()
         low = message.lower()
@@ -117,17 +125,17 @@ def _specialist_summary(db: Session, course, role: str, message: str, lang: str,
         if match:
             pre_ids = db.scalars(select(ConceptPrerequisite.prerequisite_id).where(ConceptPrerequisite.concept_id == match.id)).all()
             pres = [c.name for c in concepts if c.id in pre_ids]
-            return (f"According to Clara's analysis, '{match.name}' builds on: {', '.join(pres) or 'no earlier concept in this course'}.",
+            return (f"According to the course analysis, '{match.name}' builds on: {', '.join(pres) or 'no earlier concept in this course'}.",
                     match.citations, {"open": "map"})
-        return f"Clara found {len(concepts)} concepts. The Topic map shows how they depend on each other.", [], {"open": "map"}
+        return f"This course has {len(concepts)} concepts. The Topic map shows how they depend on each other.", [], {"open": "map"}
     if role == "resource_finder":
         if not get_settings().gemini_api_key:
             return "No verified external resource: the search service is not configured on this server, so I won't suggest links.", [], None
-        return "The Resource Finder searches the web and checks every link before showing it. Open the Resources tab to run it.", [], {"open": "resources"}
+        return "The resource search looks through the web and checks every link before showing it. Open the Resources tab to run it.", [], {"open": "resources"}
     if role == "riley":
         db.add(ContentReport(reporter_id=user.id, target_type="ai_content", target_id=str(course.id), reason=message[:1000]))
         db.commit()
-        return "Thanks — I sent this to Riley's review queue. The item stays marked provisional until it is checked.", [], None
+        return "Thanks — I sent this to the quality review queue. The item stays marked provisional until it is checked.", [], None
     return "", [], None
 
 
@@ -167,7 +175,7 @@ def nova(course_id: uuid.UUID, body: NovaIn, user=Depends(current_user), db: Ses
 
     replies = []
     for role in targets:
-        handoff = HANDOFF.get(lang, HANDOFF["en"]).format(name=NAMES[role])
+        handoff = HANDOFF.get(lang, HANDOFF["en"]).format(name=LABELS.get(lang, NAMES)[role])
         if role == "sam":
             # Retrieval scope: this course only (already authorised above).
             history = _history(db, conv)
@@ -209,3 +217,13 @@ def nova_history(course_id: uuid.UUID, user=Depends(current_user), db: Session =
              "demo": (m.meta or {}).get("demo", False), "at": m.created_at.isoformat()}
             for m in msgs if not (m.role == "user" and m.agent_role == "sam")]
 
+
+
+@router.delete("/courses/{course_id}/nova/history")
+def clear_nova_history(course_id: uuid.UUID, user=Depends(current_user), db: Session = Depends(get_db)):
+    """The student erases their own conversation with Nova for this course."""
+    course = get_readable_course(db, user, course_id)
+    for conv in db.scalars(select(TutorConversation).where(TutorConversation.user_id == user.id, TutorConversation.course_id == course.id)):
+        db.delete(conv)
+    db.commit()
+    return {"ok": True}

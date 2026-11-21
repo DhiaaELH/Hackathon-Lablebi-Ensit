@@ -116,7 +116,7 @@ export function Overview({ course, focusSection }: { course: CourseDetail; focus
 
       {notes.length > 0 && (
         <details className="clara-note">
-          <summary><Icon name="spark" size={14} /> {t("missing")} <span className="muted">· Clara · {notes.length}</span></summary>
+          <summary><Icon name="spark" size={14} /> {t("missing")} <span className="muted">· {notes.length}</span></summary>
           <ul>{notes.map((n, i) => <li key={i}><Rich text={n} /></li>)}</ul>
         </details>
       )}

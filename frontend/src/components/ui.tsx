@@ -33,7 +33,7 @@ export function QualityBadge({ status }: { status: string | null | undefined }) 
   const { t } = useI18n();
   if (!status) return null;
   const cls = status === "pass" ? "badge-success" : status === "revise" ? "badge-error" : "badge-warning";
-  return <span className={`badge ${cls}`} title="Riley">{t(`quality_${status}` as MessageKey) ?? status}</span>;
+  return <span className={`badge ${cls}`} title={t("qualityHint")}>{t(`quality_${status}` as MessageKey) ?? status}</span>;
 }
 
 /** Inline source citations ("p. 3") with an expandable excerpt from the student's own material.
@@ -110,9 +110,16 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: 
   );
 }
 
-export const AGENT_INITIAL: Record<string, string> = {
-  nova: "N", sam: "S", clara: "C", alex: "A", quinn: "Q", riley: "R", sage: "Sg", max: "M", jordan: "J", resource_finder: "RF",
-};
-export const AGENT_NAME: Record<string, string> = {
-  nova: "Nova", sam: "Sam", clara: "Clara", alex: "Alex", quinn: "Quinn", riley: "Riley", sage: "Sage", max: "Max", jordan: "Jordan", resource_finder: "Resource Finder",
-};
+/** Only the two personas a student talks to are named. Background roles are labelled by their job (i18n `agent_<role>`). */
+export const AGENT_INITIAL: Record<string, string> = { nova: "N", sam: "S" };
+export const AGENT_NAME: Record<string, string> = { nova: "Nova", sam: "Sam" };
+const AGENT_ICON: Record<string, string> = { clara: "search", alex: "wand", quinn: "question", riley: "shield", sage: "layers", max: "file", jordan: "compass", resource_finder: "link" };
+
+export function useAgentLabel() {
+  const { t } = useI18n();
+  return (role: string) => AGENT_NAME[role] ?? t(`agent_${role}` as MessageKey) ?? role;
+}
+
+export function AgentAvatar({ role }: { role: string }) {
+  return <span className="avatar" aria-hidden="true">{AGENT_INITIAL[role] ?? <Icon name={AGENT_ICON[role] ?? "spark"} size={15} />}</span>;
+}

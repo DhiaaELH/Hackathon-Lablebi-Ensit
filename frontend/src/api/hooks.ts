@@ -8,6 +8,7 @@ import { api } from "./client";
 import type {
   AssessmentCard, AssessmentDetail, CourseCard, CourseDetail, Health, Insights, Me, NotificationT, NovaHistoryItem,
   Progress, Projects, Revision, TeacherResponseT, ThreadCard, ThreadDetail, WorkflowStatus,
+  AdminStats, AdminUser, MemberT,
   ConversationT, DueCards, Suggestion, ExamList, ExamT, GlossaryTermT, GroupT, MessagesPage, PublicProfile, QueueItem, Recs, ReportT, SharedT,
 } from "./types";
 
@@ -46,6 +47,9 @@ export const qk = {
   queue: ["queue"] as const,
   reports: ["reports"] as const,
   suggestions: ["suggestions"] as const,
+  members: (courseId: string) => ["members", courseId] as const,
+  adminUsers: (q: string, role: string) => ["adminUsers", q, role] as const,
+  adminStats: ["adminStats"] as const,
 };
 
 export const useMe = () =>
@@ -107,6 +111,12 @@ export const useQueue = (enabled: boolean) =>
 export const useSuggestions = () =>
   useQuery({ queryKey: qk.suggestions, queryFn: () => api.get<Suggestion[]>("/api/users/suggestions"), staleTime: 5 * MIN });
 export const useReports = () => useQuery({ queryKey: qk.reports, queryFn: () => api.get<ReportT[]>("/api/admin/reports") });
+
+export const useMembers = (courseId: string) =>
+  useQuery({ queryKey: qk.members(courseId), queryFn: () => api.get<MemberT[]>(`/api/courses/${courseId}/members`) });
+export const useAdminUsers = (q: string, role: string) =>
+  useQuery({ queryKey: qk.adminUsers(q, role), queryFn: () => api.get<AdminUser[]>(`/api/admin/users?q=${encodeURIComponent(q)}&role=${role}`) });
+export const useAdminStats = () => useQuery({ queryKey: qk.adminStats, queryFn: () => api.get<AdminStats>("/api/admin/stats") });
 
 export function useInvalidate() {
   const qc = useQueryClient();
