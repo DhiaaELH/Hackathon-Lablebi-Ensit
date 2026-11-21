@@ -18,7 +18,6 @@
 **Resource Finder:** Gemini + Google Search grounding; only links returned by the search tool are shown, each fetched and checked (public host, HTTP < 400). Needs a Gemini plan that includes search; otherwise an honest "unavailable" state.
 
 ## Verified
-- 33 backend tests (pytest, real PostgreSQL 16 + pgvector) — privacy rules, thresholds, SRS, verification, moderation, etc.
 - Frontend: TypeScript strict typecheck + production build; headless-Chromium walkthrough of all main screens (FR + AR/RTL) with zero runtime errors.
 - Live Gemini: course generation, tutor, PDF OCR and YouTube reading were exercised with a real key. Search grounding returned "quota exceeded" on the free plan.
 
