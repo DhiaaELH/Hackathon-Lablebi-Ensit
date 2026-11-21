@@ -72,6 +72,15 @@ function RegenerateButton({ courseId }: { courseId: string }) {
   return <button className="btn btn-sm" onClick={run} title={health.data.tiers?.smart}><Icon name="wand" size={14} /> {t("regenerate")}</button>;
 }
 
+const NOVA_PREF = "lf_nova_open";
+const isWide = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1101px)").matches;
+function readNovaPref(): boolean {
+  try { return localStorage.getItem(NOVA_PREF) === "1"; } catch { return false; }
+}
+function writeNovaPref(open: boolean) {
+  try { localStorage.setItem(NOVA_PREF, open ? "1" : "0"); } catch { /* storage unavailable: just not remembered */ }
+}
+
 export function CoursePage() {
   const { id = "" } = useParams();
   const { t } = useI18n();
@@ -82,15 +91,21 @@ export function CoursePage() {
   const [tab, setTabState] = useState<Tab>(urlTab && TABS.includes(urlTab) ? urlTab : "overview");
   const [focusSection, setFocusSection] = useState<string | null>(params.get("section"));
   const [novaReq, setNovaReq] = useState<NovaRequest | null>(null);
-  const [novaOpen, setNovaOpen] = useState(false); // drawer state below 1100px; the panel is always visible on wide screens
+  // Nova starts retracted (course gets the full width). On wide screens the choice is remembered; on phones it is a drawer
+  // that always starts closed so it never covers the course on arrival.
+  const [novaOpen, setNovaOpenState] = useState(() => isWide() && readNovaPref());
+  const setNovaOpen = useCallback((open: boolean) => {
+    setNovaOpenState(open);
+    if (isWide()) writeNovaPref(open);
+  }, []);
   const invalidate = useInvalidate();
-  const ask = useCallback((r: Omit<NovaRequest, "nonce">) => { setNovaReq({ ...r, nonce: Date.now() }); setNovaOpen(true); }, []);
+  const ask = useCallback((r: Omit<NovaRequest, "nonce">) => { setNovaReq({ ...r, nonce: Date.now() }); setNovaOpen(true); }, [setNovaOpen]);
   useEffect(() => {
     if (!novaOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setNovaOpen(false); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [novaOpen]);
+  }, [novaOpen, setNovaOpen]);
   const onWorkflowDone = useCallback(
     () => invalidate([...qk.course(id)], [...qk.assessments(id)], [...qk.revision(id)], [...qk.progress(id)]),
     [id, invalidate],
@@ -117,7 +132,8 @@ export function CoursePage() {
     overview: [t("overview"), "book"], practice: [t("practice"), "wand"], revision: [t("revision"), "layers"], map: [t("map"), "map"],
     resources: [t("resourcesTab"), "link"], exams: [t("exams"), "file"], projects: [t("projects"), "compass"], progress: [t("progress"), "pulse"], community: [t("community"), "users"],
   };
-  const openTab = (name: string) => { if ((TABS as readonly string[]).includes(name)) { setTab(name as Tab); setNovaOpen(false); } };
+  // on phones the drawer covers the tab Nova points to, so close it; on desktop keep the side panel open
+  const openTab = (name: string) => { if ((TABS as readonly string[]).includes(name)) { setTab(name as Tab); if (!isWide()) setNovaOpen(false); } };
 
   return (
     <div className="course-page">
@@ -144,7 +160,7 @@ export function CoursePage() {
         <WorkflowProgress workflowId={c.workflow.id} onDone={onWorkflowDone} canRetry={c.access === "owner" || c.access === "teacher"} />
       )}
       <Tabs tabs={TABS.map((x) => ({ id: x, label: labels[x][0], icon: labels[x][1] }))} value={tab} onChange={setTab} />
-      <div className="workspace">
+      <div className={`workspace${novaOpen ? " nova-is-open" : " nova-is-closed"}`}>
         <div className="workspace-main">
           {tab === "overview" && <Overview course={c} focusSection={focusSection} />}
           {tab === "practice" && <Practice course={c} ask={ask} />}

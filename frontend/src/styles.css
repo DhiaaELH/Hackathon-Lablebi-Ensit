@@ -496,3 +496,20 @@ h1 { letter-spacing: -0.02em; }
 .topic-map.can-scroll .table-wrap { mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent); }
 [dir="rtl"] .topic-map.can-scroll .table-wrap { mask-image: linear-gradient(to left, #000 calc(100% - 56px), transparent); -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 56px), transparent); }
 .map-scroll-hint { position: absolute; top: 0.6rem; inset-inline-end: 0.8rem; z-index: 2; background: var(--paper-2); border-radius: 999px; padding: 0.05rem 0.55rem; font-size: 0.85rem; }
+
+/* ---------- Nova retractable on wide screens (2026-11) ---------- */
+.nova-close { display: inline-flex; margin-inline-start: auto; }
+.nova-fab { display: inline-flex; align-items: center; gap: 0.55rem; position: fixed; bottom: 1.25rem; inset-inline-end: 1.25rem; z-index: 50;
+  border: 0; border-radius: 999px; padding: 0.55rem 1.05rem 0.55rem 0.6rem; background: var(--ink); color: var(--paper); font: inherit; font-weight: 600;
+  box-shadow: 0 10px 30px -10px rgba(29, 42, 47, 0.55); cursor: pointer; animation: msg-in 0.25s var(--ease); transition: transform 0.15s var(--ease); }
+.nova-fab:hover { transform: translateY(-2px); }
+.nova-fab .nova-orb { width: 26px; height: 26px; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15); }
+@media (min-width: 1101px) {
+  .workspace.nova-is-closed { grid-template-columns: minmax(0, 1fr); }
+  .workspace.nova-is-closed .nova-dock { display: none; }
+  .workspace.nova-is-open .nova-dock { animation: nova-in 0.28s var(--ease); }
+  .toasts { bottom: 4.8rem; }
+}
+@keyframes nova-in { from { opacity: 0; transform: translateX(16px); } }
+[dir="rtl"] .workspace.nova-is-open .nova-dock { animation-name: nova-in-rtl; }
+@keyframes nova-in-rtl { from { opacity: 0; transform: translateX(-16px); } }

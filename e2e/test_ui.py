@@ -98,15 +98,40 @@ def test_nova_drawer_on_phone(as_role):
     assert_clean(probs, "nova drawer")
 
 
-def test_nova_always_visible_on_desktop(as_role):
+def test_nova_retractable_on_desktop(as_role):
     page = as_role("student")
     courses = _ready_courses(page)
     if not courses:
         pytest.skip("no ready course")
-    page.goto(f"{BASE_URL}/courses/{courses[0]['id']}")
+    probs = watch(page)
+    url = f"{BASE_URL}/courses/{courses[0]['id']}"
+    page.goto(url)
     settle(page)
-    assert page.locator(".nova-dock .nova").is_visible()
-    assert not page.locator(".nova-fab").is_visible()
+    main = page.locator(".workspace-main")
+    full = main.bounding_box()["width"]
+    fab = page.locator(".nova-fab")
+    assert fab.is_visible() and not page.locator(".nova-dock .nova").is_visible(), "Nova should start retracted"
+    fab.click()
+    page.wait_for_timeout(400)
+    assert page.locator(".nova-dock .nova").is_visible(), "the button should expand Nova"
+    assert main.bounding_box()["width"] < full - 200, "the course column should make room for Nova"
+    assert not fab.is_visible()
+    page.reload()
+    settle(page)
+    assert page.locator(".nova-dock .nova").is_visible(), "the open state should be remembered"
+    page.locator(".nova-close").click()
+    page.wait_for_timeout(300)
+    assert not page.locator(".nova-dock .nova").is_visible() and fab.is_visible(), "x should retract Nova"
+    assert abs(main.bounding_box()["width"] - full) < 2, "the course should take the full width again"
+    fab.click()
+    page.wait_for_timeout(300)
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(300)
+    assert not page.locator(".nova-dock .nova").is_visible(), "Esc should retract Nova"
+    page.reload()
+    settle(page)
+    assert not page.locator(".nova-dock .nova").is_visible(), "the closed state should be remembered"
+    assert_clean(probs, "nova retract")
 
 
 @pytest.mark.parametrize("path", ["/", "/library", "/people", "/messages", "/notifications", "/settings"])
