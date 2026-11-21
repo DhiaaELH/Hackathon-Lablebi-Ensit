@@ -31,8 +31,8 @@
 [dir="rtl"] { --display: "IBM Plex Sans Arabic", "Fraunces", serif; }
 
 * { box-sizing: border-box; }
-/* Base 17px that still follows the reader's browser font setting (106.25% of 16px); every rem scales with it. */
-html { font-size: 106.25%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Base 19px that still follows the reader's browser font setting (118.75% of 16px); every rem scales with it. */
+html { font-size: 118.75%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html, body { margin: 0; padding: 0; }
 body { background: var(--paper); color: var(--ink); font-family: var(--font); font-size: 1rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
 [dir="rtl"] body { font-size: 1.06rem; line-height: 1.75; } /* Arabic script needs a larger size and more leading */
@@ -49,7 +49,7 @@ p { margin: 0 0 0.75rem; }
 .eyebrow { font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 
 /* ---------- shell ---------- */
-.shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+.shell { display: grid; grid-template-columns: 256px minmax(0, 1fr); min-height: 100vh; }
 .sidebar { position: sticky; top: 0; height: 100vh; border-inline-end: 1px solid var(--line); background: var(--paper); padding: 1.1rem 0.8rem; display: flex; flex-direction: column; gap: 0.25rem; overflow-y: auto; }
 .brand { display: flex; align-items: center; gap: 0.6rem; color: var(--ink); padding: 0.2rem 0.5rem 1rem; }
 .brand:hover { text-decoration: none; }

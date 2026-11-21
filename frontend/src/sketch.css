@@ -63,7 +63,7 @@ a { color: var(--primary); }
 a:hover { text-decoration: underline wavy var(--red); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
 ::selection { background: var(--postit-2); color: var(--ink); }
 :focus-visible { outline: 2.5px dashed var(--primary); outline-offset: 3px; border-radius: 4px; }
-.eyebrow { font-family: var(--hand); font-size: 0.88rem; letter-spacing: 0.1em; color: var(--muted); }
+.eyebrow { font-family: var(--hand); font-size: 0.92rem; letter-spacing: 0.1em; color: var(--muted); }
 .small { font-size: 0.95rem; }
 .tiny { font-size: 0.88rem; }
 hr { border-top: 2px dashed var(--line); }
@@ -74,7 +74,7 @@ hr { border-top: 2px dashed var(--line); }
   font-family: var(--display); font-weight: 700; font-size: 1.25rem; transform: rotate(-6deg); }
 .brand-name { font-family: var(--display); font-weight: 700; font-size: 1.4rem; }
 .brand-tag { font-size: 0.88rem; }
-.side-link { font-family: var(--hand); border-radius: var(--wob); border: 2px solid transparent; color: var(--ink-2); font-size: 1.05rem; transition: transform 0.12s, background 0.12s; }
+.side-link { font-family: var(--hand); border-radius: var(--wob); border: 2px solid transparent; color: var(--ink-2); font-size: 1.12rem; transition: transform 0.12s, background 0.12s; }
 .side-link:hover { background: transparent; border-color: var(--ink); border-style: dashed; text-decoration: none; transform: rotate(-0.6deg); }
 .side-link.active { background: var(--postit); border: var(--pen); box-shadow: var(--sh-sm); color: var(--ink); transform: rotate(-1deg); }
 .side-link.active::before { display: none; }
@@ -100,7 +100,7 @@ hr { border-top: 2px dashed var(--line); }
 .card.skeleton { box-shadow: none; border-style: dashed; }
 
 .btn { border: var(--pen); border-radius: var(--wob); background: var(--surface); color: var(--ink); box-shadow: var(--sh-sm);
-  font-family: var(--hand); font-size: 1.08rem; font-weight: 400; padding: 0.42rem 1rem; line-height: 1.3;
+  font-family: var(--hand); font-size: 1.12rem; font-weight: 400; padding: 0.42rem 1rem; line-height: 1.3;
   transition: transform 0.1s, box-shadow 0.1s, background 0.12s, color 0.12s; }
 .btn:hover:not(:disabled) { border-color: var(--ink); background: var(--postit); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 0 var(--ink); }
 .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: none; }
@@ -113,7 +113,7 @@ hr { border-top: 2px dashed var(--line); }
 .btn-ghost:active:not(:disabled) { transform: none; }
 .btn-quiet { border-color: var(--ink); box-shadow: none; }
 .btn-quiet[aria-pressed="true"] { background: var(--postit); color: var(--ink); border-color: var(--ink); box-shadow: var(--sh-sm); }
-.btn-sm { font-size: 0.95rem; padding: 0.22rem 0.7rem; border-radius: var(--wob); }
+.btn-sm { font-size: 1rem; padding: 0.22rem 0.7rem; border-radius: var(--wob); }
 .btn-danger { color: var(--error); border-color: var(--error); box-shadow: 2px 2px 0 0 var(--error); }
 .btn-danger:hover:not(:disabled) { background: var(--error-soft); border-color: var(--error); box-shadow: 3px 3px 0 0 var(--error); }
 .btn-done:disabled { color: var(--success); border-color: var(--success); background: var(--success-soft); box-shadow: 2px 2px 0 0 var(--success); }
@@ -126,7 +126,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); box-sh
 label { font-family: var(--hand); font-weight: 400; font-size: 1.05rem; }
 .check input, .choice input { accent-color: var(--red); }
 
-.badge { font-family: var(--hand); border: 1.5px solid var(--ink); border-radius: var(--wob); background: var(--surface); color: var(--ink); font-weight: 400; font-size: 0.9rem; padding: 0.02rem 0.6rem; }
+.badge { font-family: var(--hand); border: 1.5px solid var(--ink); border-radius: var(--wob); background: var(--surface); color: var(--ink); font-weight: 400; font-size: 0.95rem; padding: 0.02rem 0.6rem; }
 .badge-primary { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
 .badge-success { background: var(--success-soft); color: var(--success); border-color: var(--success); }
 .badge-warning { background: var(--postit); color: #7a4a08; border-color: #7a4a08; }
@@ -140,7 +140,7 @@ label { font-family: var(--hand); font-weight: 400; font-size: 1.05rem; }
 .spinner { border: 2.5px solid var(--line); border-top-color: var(--red); }
 .skeleton { background: linear-gradient(90deg, var(--paper-2), #fffdf6, var(--paper-2)); background-size: 200% 100%; }
 
-.cite { font-family: var(--hand); font-size: 0.88rem; border-radius: var(--wob); background: var(--primary-soft); color: var(--primary); border: 1.5px solid var(--primary); }
+.cite { font-family: var(--hand); font-size: 0.92rem; border-radius: var(--wob); background: var(--primary-soft); color: var(--primary); border: 1.5px solid var(--primary); }
 .cite:hover { background: var(--postit); }
 .cite-more { background: transparent; border-style: dashed; }
 .cite-panel { border: 2px dashed var(--ink); border-radius: var(--wob); background: var(--paper); }
@@ -153,13 +153,13 @@ label { font-family: var(--hand); font-weight: 400; font-size: 1.05rem; }
 
 /* ---------- tabs ---------- */
 .tabs { border-bottom: var(--pen); background: var(--paper); gap: 0.3rem; }
-.tab { font-family: var(--display); font-size: 1.05rem; color: var(--muted); border-bottom: 0; border-radius: 10px 10px 0 0; position: relative; padding-bottom: 0.55rem; }
+.tab { font-family: var(--display); font-size: 1.12rem; color: var(--muted); border-bottom: 0; border-radius: 10px 10px 0 0; position: relative; padding-bottom: 0.55rem; }
 .tab:hover { color: var(--ink); }
 .tab[aria-selected="true"] { color: var(--ink); }
 .tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0.4rem; right: 0.4rem; bottom: 2px; height: 9px; background: var(--squiggle) center / 100% 100% no-repeat; }
 
 /* ---------- chips ---------- */
-.chip { border: var(--pen); border-radius: var(--wob); background: var(--surface); font-family: var(--hand); font-size: 0.95rem; padding: 0.18rem 0.8rem; transition: transform 0.1s, background 0.12s; }
+.chip { border: var(--pen); border-radius: var(--wob); background: var(--surface); font-family: var(--hand); font-size: 1.02rem; padding: 0.18rem 0.8rem; transition: transform 0.1s, background 0.12s; }
 .chip:hover { border-color: var(--ink); transform: rotate(-1.5deg); background: var(--paper); }
 .chip[aria-pressed="true"], .chip[aria-checked="true"] { background: var(--postit); border-color: var(--ink); color: var(--ink); box-shadow: var(--sh-sm); }
 .chip.done { border-color: var(--success); color: var(--success); background: var(--success-soft); }
