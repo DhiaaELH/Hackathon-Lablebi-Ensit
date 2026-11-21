@@ -22,6 +22,16 @@ Database options: with `DATABASE_URL` unset, the backend starts an **embedded Po
 
 **Checks:** `cd backend && .venv/bin/python -m pytest -q` (33 tests) · `cd frontend && npm run typecheck && npm run build`.
 
+**End-to-end tests** (`e2e/`): a headless browser logs in as every demo role, opens every page and every course tab, and fails on JS exceptions, console errors, broken assets or API errors. Read-only, so it is safe against a live site:
+
+```bash
+pip install -r e2e/requirements.txt && python -m playwright install chromium
+python -m pytest e2e -q                                          # against vite preview on http://localhost:4173
+E2E_BASE_URL=https://your-deployment.example python -m pytest e2e -q
+```
+
+**CI:** `.github/workflows/tests.yml` runs backend pytest, frontend typecheck + build, then the E2E suite against a freshly seeded stack on every push and pull request.
+
 ### Demo accounts (local only, synthetic)
 Password for all: `demo-password-123` (override with `LF_DEMO_PASSWORD` before seeding).
 `student@demo.lessonforge.local` · `senior@demo.lessonforge.local` · `teacher@demo.lessonforge.local` · `moderator@demo.lessonforge.local`.
