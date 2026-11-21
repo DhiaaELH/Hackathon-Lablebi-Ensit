@@ -1,0 +1,19 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+sqlalchemy>=2.0
+psycopg[binary]>=3.2
+pgvector>=0.3
+pydantic-settings>=2.4
+anthropic>=2.12
+pyjwt>=2.9
+bcrypt>=4.2
+pypdf>=5.0
+python-multipart>=0.0.9
+fpdf2>=2.8
+python-pptx>=1.0
+# dev / local
+pytest>=8
+httpx>=0.27
+pgserver>=0.1.4  # embedded Postgres 16 + pgvector for local dev/tests without Docker
+email-validator>=2
+google-genai>=1.0

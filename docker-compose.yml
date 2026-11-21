@@ -1,0 +1,12 @@
+# PostgreSQL 16 + pgvector for local/staging use (alternative to the embedded dev server).
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: lessonforge
+      POSTGRES_PASSWORD: lessonforge
+      POSTGRES_DB: lessonforge
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+volumes:
+  pgdata:

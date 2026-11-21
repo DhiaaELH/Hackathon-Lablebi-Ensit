@@ -1,0 +1,12 @@
+backend/.venv/
+backend/.pgdata/
+backend/storage/
+backend/.env
+**/__pycache__/
+.pytest_cache/
+frontend/node_modules/
+frontend/dist/
+*.env
+!.env.example
+*.log
+.claude/
