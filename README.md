@@ -3,6 +3,8 @@
 AI learning platform for Tunisian university students (Learn · Community · Class insights).
 **Stack:** React 18 + TypeScript (Vite, TanStack Query) · FastAPI (Python 3.12) · PostgreSQL 16 + pgvector · **Gemini** (`google-genai`, default `gemini-3.5-flash`) or **Claude** (`anthropic`, `claude-opus-5-5`) — pick with one env var.
 
+**Presentation:** an interactive 3D deck lives in [`presentation/`](presentation/) — see its README to open it.
+
 ## Run locally
 
 ```bash
