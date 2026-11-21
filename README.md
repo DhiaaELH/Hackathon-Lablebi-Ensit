@@ -39,7 +39,7 @@ Put **one** key in `backend/.env` (copy `.env.example`; never commit `.env`):
 * **No key** → *demo mode* (yellow banner). The seeded course uses hand-written fixtures; new uploads use rule-based heuristics; the tutor assembles answers from retrieved passages. Nothing claims an AI ran.
 * **With a key** → all 10 roles call Claude with structured outputs (Pydantic schemas), adaptive thinking (default on Opus 5.5), per-role effort, and the server-side refusal fallback (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`).
 
-## RAG
+# RAG
 
 `backend/app/retrieval/` — chunks keep page/slide provenance and a short citation ref (`S12`).
 Hybrid retrieval in PostgreSQL: full-text (`tsvector`, `simple` config, GIN index) **+** dense vectors (pgvector HNSW, cosine) fused with **Reciprocal Rank Fusion**. Queries are always scoped to course ids the user is authorised to read. Embeddings: offline char-n-gram hashing by default (works for French/Arabic/Arabizi, no download); set `EMBEDDINGS_PROVIDER=fastembed` (+ `pip install fastembed`) for multilingual MiniLM.
