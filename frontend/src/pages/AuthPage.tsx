@@ -207,7 +207,7 @@ export function AuthPage() {
           </button>
           <hr style={{ margin: "0.3rem 0" }} />
           <div className="stack" style={{ gap: "0.4rem" }}>
-            <span className="tiny muted">{t("demoAccounts")} · <span className="kbd">demo-password-123</span> · local only</span>
+            <span className="tiny muted">{t("demoAccounts")} · <span className="kbd">demo-password-123</span></span>
             <div className="row" style={{ gap: "0.35rem" }}>
               {DEMO.map(([e, label]) => (
                 <button key={e} type="button" className="chip" onClick={() => typeInto(e, "demo-password-123")}>{label}</button>
