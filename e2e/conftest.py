@@ -124,18 +124,26 @@ def login(context: BrowserContext, email: str) -> None:
 _STATES: dict[str, dict] = {}
 
 
+def state_for(browser: Browser, role: str) -> dict:
+    """Logged-in storage state for a role. One real login per role per run (login is rate-limited)."""
+    if role not in _STATES:
+        ctx = browser.new_context(locale="fr-FR")
+        login(ctx, ROLES[role])
+        _STATES[role] = ctx.storage_state()
+        ctx.close()
+    return _STATES[role]
+
+
+PHONE = {"viewport": {"width": 390, "height": 844}, "is_mobile": True, "has_touch": True}
+
+
 @pytest.fixture
 def as_role(browser: Browser):
-    """as_role("teacher") -> a fresh Page already logged in. One real login per role per run (login is rate-limited)."""
+    """as_role("teacher") -> a fresh desktop Page already logged in; as_role("student", phone=True) -> same on a 390px phone."""
     contexts: list[BrowserContext] = []
 
-    def make(role: str) -> Page:
-        if role not in _STATES:
-            ctx = browser.new_context(locale="fr-FR")
-            login(ctx, ROLES[role])
-            _STATES[role] = ctx.storage_state()
-            ctx.close()
-        ctx = browser.new_context(locale="fr-FR", storage_state=_STATES[role])
+    def make(role: str, phone: bool = False) -> Page:
+        ctx = browser.new_context(locale="fr-FR", storage_state=state_for(browser, role), **(PHONE if phone else {}))
         contexts.append(ctx)
         return ctx.new_page()
 

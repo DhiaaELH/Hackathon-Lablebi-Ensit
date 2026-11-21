@@ -5,6 +5,7 @@ import { Empty, ErrorBox, Spinner } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 import type { MessageKey } from "../i18n/messages";
 import { Icon } from "../components/Icon";
+import { Rich, texToPlain } from "../components/Rich";
 
 const REASONS = ["vocabulary", "missing_prerequisite", "too_fast", "need_example", "exercise_too_hard"];
 
@@ -48,7 +49,7 @@ export function TeacherInsights() {
       <div className="row" style={{ justifyContent: "space-between" }}>
         <h1 style={{ margin: 0 }}>{t("insights")}</h1>
         <select value={cid ?? ""} onChange={(e) => setCourseId(e.target.value)} style={{ maxWidth: 420 }} aria-label="Course">
-          {teachable.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+          {teachable.map((c) => <option key={c.id} value={c.id}>{texToPlain(c.title)}</option>)}
         </select>
       </div>
       {ins.isLoading && <Spinner />}
@@ -59,13 +60,13 @@ export function TeacherInsights() {
           <section className="card stack">
             <h2>{t("heatmap")}</h2>
             <div className="table-wrap">
-              <table>
+              <table className="heat-table">
                 <thead><tr><th>{t("section")}</th><th>{t("students")}</th>{REASONS.map((r) => <th key={r}>{t(`reason_${r}` as MessageKey)}</th>)}<th>{t("topReason")}</th></tr></thead>
                 <tbody>
                   {d.heatmap.map((h) => (
                     <tr key={h.section_id}>
-                      <td><span className="small muted">{h.chapter}</span><br />{h.section}</td>
-                      <td><span className="heat" style={heatColor(h.students, max)}>{h.students ?? "—"}</span>{h.suppressed && <div className="small muted">{t("hidden")}</div>}</td>
+                      <td className="heat-section"><span className="small muted"><Rich text={h.chapter} /></span><br /><Rich text={h.section} /></td>
+                      <td><span className="heat" style={heatColor(h.students, max)}>{h.students ?? "—"}</span>{h.suppressed && <div className="tiny muted heat-hidden">{t("hidden")}</div>}</td>
                       {REASONS.map((r) => <td key={r}>{h.reasons[r] ?? <span className="muted">—</span>}</td>)}
                       <td>{h.top_reason ? t(`reason_${h.top_reason}` as MessageKey) : "—"}</td>
                     </tr>
@@ -79,7 +80,7 @@ export function TeacherInsights() {
               <h2>{t("mostFailed")}</h2>
               {d.most_failed_questions.length === 0 && <p className="muted small">{t("hidden")}</p>}
               {d.most_failed_questions.map((q) => (
-                <div key={q.question_id} className="small"><strong>{Math.round(q.failure_rate * 100)}%</strong> · {q.prompt} <span className="muted">({q.students} {t("students")})</span></div>
+                <div key={q.question_id} className="small"><strong>{Math.round(q.failure_rate * 100)}%</strong> · <Rich text={q.prompt} /> <span className="muted">({q.students} {t("students")})</span></div>
               ))}
             </section>
             <section className="card stack">
@@ -98,7 +99,7 @@ export function TeacherInsights() {
             <div className="row">
               <select value={section} onChange={(e) => setSection(e.target.value)} aria-label={t("section")} style={{ maxWidth: 360 }}>
                 <option value="">—</option>
-                {d.heatmap.map((h) => <option key={h.section_id} value={h.section_id}>{h.section}</option>)}
+                {d.heatmap.map((h) => <option key={h.section_id} value={h.section_id}>{texToPlain(h.section)}</option>)}
               </select>
               <select value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Type" style={{ maxWidth: 260 }}>
                 {["clarification", "extra_exercise", "next_session", "pinned_answer"].map((k) => <option key={k} value={k}>{t(`kind_${k}` as MessageKey)}</option>)}
@@ -111,7 +112,7 @@ export function TeacherInsights() {
           </form>
           <section className="card stack">
             <h2>{t("teacherResponses")}</h2>
-            {d.responses.map((r) => <div key={r.id} className="small"><span className="badge">{t(`kind_${r.kind}` as MessageKey)}</span> {r.body}</div>)}
+            {d.responses.map((r) => <div key={r.id} className="small"><span className="badge">{t(`kind_${r.kind}` as MessageKey)}</span> <Rich text={r.body} /></div>)}
           </section>
         </>
       )}

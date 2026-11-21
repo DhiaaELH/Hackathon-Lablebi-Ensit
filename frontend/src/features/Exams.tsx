@@ -28,7 +28,7 @@ function ExamDetail({ id, onBack }: { id: string; onBack: () => void }) {
       <button className="btn btn-sm btn-ghost" style={{ alignSelf: "flex-start" }} onClick={onBack}><Icon name="back" size={14} /> {t("exams")}</button>
       <div className="card stack">
         <span className="eyebrow">{e.data.faculty} · {e.data.subject} · {e.data.year} · {e.data.session}</span>
-        <h2 style={{ margin: 0 }}>{e.data.title}</h2>
+        <h2 style={{ margin: 0 }}><Rich text={e.data.title} /></h2>
         <Rich as="div" text={e.data.content ?? ""} />
       </div>
       <h3>{t("corrections")}</h3>

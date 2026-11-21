@@ -3,7 +3,7 @@ import { api } from "../api/client";
 import { qk, useDue, useInvalidate, useProgress, useRevision } from "../api/hooks";
 import type { CourseDetail, DueCard, Revision as RevisionT } from "../api/types";
 import { Icon } from "../components/Icon";
-import { Rich } from "../components/Rich";
+import { Rich, texToPlain } from "../components/Rich";
 import { SpeakButton, SpeechSettings } from "../components/Speech";
 import { Citations, Empty, ErrorBox, QualityBadge, Spinner, Tabs } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
@@ -16,7 +16,7 @@ function Flashcard({ c, course, big, flipped: ctrl, onFlip }: { c: Card; course:
   const flipped = ctrl ?? own;
   const toggle = () => (onFlip ? onFlip(!flipped) : setOwn((f) => !f));
   return (
-    <div className={`flip${flipped ? " flipped" : ""}${big ? " big" : ""}`} role="button" tabIndex={0} aria-pressed={flipped} aria-label={c.front}
+    <div className={`flip${flipped ? " flipped" : ""}${big ? " big" : ""}`} role="button" tabIndex={0} aria-pressed={flipped} aria-label={texToPlain(c.front)}
       onClick={toggle} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggle(); } }}>
       <div className="flip-inner">
         <div className="flip-face"><span className="badge">{c.kind}</span><span className="front"><Rich text={c.front} /></span></div>

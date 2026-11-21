@@ -8,6 +8,7 @@ import type { CourseDetail } from "../api/types";
 import { Empty, ErrorBox, Spinner, Tabs } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 import { Rich } from "../components/Rich";
+import { texToPlain } from "../components/Rich";
 
 function ThreadView({ id, onBack }: { id: string; onBack: () => void }) {
   const { t } = useI18n();
@@ -138,7 +139,7 @@ function Threads({ course, initialChapter }: { course: CourseDetail; initialChap
       <div className="row">
         <label htmlFor="chsel" className="sr-only">Chapter</label>
         <select id="chsel" value={chapter ?? ""} onChange={(e) => setChapter(e.target.value)} style={{ maxWidth: 420 }}>
-          {course.chapters.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+          {course.chapters.map((c) => <option key={c.id} value={c.id}>{texToPlain(c.title)}</option>)}
         </select>
         <button className="btn btn-primary btn-sm" onClick={() => setCreating((v) => !v)}><Icon name="plus" size={14} /> {t("newThread")}</button>
       </div>

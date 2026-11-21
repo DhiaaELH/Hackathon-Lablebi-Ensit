@@ -82,8 +82,15 @@ export function CoursePage() {
   const [tab, setTabState] = useState<Tab>(urlTab && TABS.includes(urlTab) ? urlTab : "overview");
   const [focusSection, setFocusSection] = useState<string | null>(params.get("section"));
   const [novaReq, setNovaReq] = useState<NovaRequest | null>(null);
+  const [novaOpen, setNovaOpen] = useState(false); // drawer state below 1100px; the panel is always visible on wide screens
   const invalidate = useInvalidate();
-  const ask = useCallback((r: Omit<NovaRequest, "nonce">) => setNovaReq({ ...r, nonce: Date.now() }), []);
+  const ask = useCallback((r: Omit<NovaRequest, "nonce">) => { setNovaReq({ ...r, nonce: Date.now() }); setNovaOpen(true); }, []);
+  useEffect(() => {
+    if (!novaOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setNovaOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [novaOpen]);
   const onWorkflowDone = useCallback(
     () => invalidate([...qk.course(id)], [...qk.assessments(id)], [...qk.revision(id)], [...qk.progress(id)]),
     [id, invalidate],
@@ -110,16 +117,16 @@ export function CoursePage() {
     overview: [t("overview"), "book"], practice: [t("practice"), "wand"], revision: [t("revision"), "layers"], map: [t("map"), "map"],
     resources: [t("resourcesTab"), "link"], exams: [t("exams"), "file"], projects: [t("projects"), "compass"], progress: [t("progress"), "pulse"], community: [t("community"), "users"],
   };
-  const openTab = (name: string) => { if ((TABS as readonly string[]).includes(name)) setTab(name as Tab); };
+  const openTab = (name: string) => { if ((TABS as readonly string[]).includes(name)) { setTab(name as Tab); setNovaOpen(false); } };
 
   return (
-    <div className="stack">
-      <div className="row between" style={{ alignItems: "flex-start" }}>
-        <div className="row" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
+    <div className="course-page">
+      <div className="course-head">
+        <div className="course-id">
           <div className="ring" style={{ ["--p" as string]: pct }} title={t("progress")}><span>{pct}%</span></div>
-          <div className="stack" style={{ gap: 4 }}>
-            <Link to="/" className="small"><Icon name="back" size={13} /> {t("myCourses")}</Link>
-            <h1 style={{ margin: 0 }}>{c.title.replace("[DÉMO] ", "")}</h1>
+          <div className="stack" style={{ gap: 4, minWidth: 0 }}>
+            <Link to="/" className="small back-link"><Icon name="back" size={13} /> {t("myCourses")}</Link>
+            <h1 className="course-title">{c.title.replace("[DÉMO] ", "")}</h1>
             <div className="row small">
               <span className={`badge ${c.visibility === "published" ? "badge-primary" : ""}`}>{c.visibility === "published" ? t("published") : t("private")}</span>
               {c.is_demo && <span className="badge badge-warning">{t("demo")}</span>}
@@ -127,7 +134,7 @@ export function CoursePage() {
             </div>
           </div>
         </div>
-        <div className="row">
+        <div className="row course-actions">
           {c.access === "owner" && <Link className="btn btn-sm" to={`/courses/${c.id}/setup`}><Icon name="plus" size={14} /> {t("addMaterial")}</Link>}
           {(c.access === "owner" || c.access === "teacher") && !processing && <RegenerateButton courseId={c.id} />}
           {c.access === "owner" && <PublishControl courseId={c.id} visibility={c.visibility} />}
@@ -136,9 +143,9 @@ export function CoursePage() {
       {c.workflow && (processing || (c.workflow.status === "partial" && (c.access === "owner" || c.access === "teacher"))) && (
         <WorkflowProgress workflowId={c.workflow.id} onDone={onWorkflowDone} canRetry={c.access === "owner" || c.access === "teacher"} />
       )}
+      <Tabs tabs={TABS.map((x) => ({ id: x, label: labels[x][0], icon: labels[x][1] }))} value={tab} onChange={setTab} />
       <div className="workspace">
-        <div style={{ minWidth: 0 }}>
-          <Tabs tabs={TABS.map((x) => ({ id: x, label: labels[x][0], icon: labels[x][1] }))} value={tab} onChange={setTab} />
+        <div className="workspace-main">
           {tab === "overview" && <Overview course={c} focusSection={focusSection} />}
           {tab === "practice" && <Practice course={c} ask={ask} />}
           {tab === "revision" && <RevisionTab course={c} />}
@@ -149,8 +156,16 @@ export function CoursePage() {
           {tab === "progress" && <ProgressTab course={c} />}
           {tab === "community" && <Community course={c} initialChapter={params.get("chapter")} />}
         </div>
-        <NovaPanel courseId={c.id} refs={c.refs} request={novaReq} onOpenTab={openTab} />
+        <div className={`nova-dock${novaOpen ? " open" : ""}`}>
+          <NovaPanel courseId={c.id} refs={c.refs} request={novaReq} onOpenTab={openTab} onClose={() => setNovaOpen(false)} />
+        </div>
       </div>
+      <div className={`nova-scrim${novaOpen ? " open" : ""}`} onClick={() => setNovaOpen(false)} aria-hidden="true" />
+      {!novaOpen && (
+        <button type="button" className="nova-fab" onClick={() => setNovaOpen(true)} aria-label={t("askNova")}>
+          <span className="nova-orb" aria-hidden="true" /> {t("askNova")}
+        </button>
+      )}
     </div>
   );
 }

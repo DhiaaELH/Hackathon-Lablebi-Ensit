@@ -77,76 +77,116 @@ export function Overview({ course, focusSection }: { course: CourseDetail; focus
   }
 
   const p = progress.data;
+  const nSections = course.chapters.reduce((n, ch) => n + ch.sections.length, 0);
+  const nDone = course.chapters.reduce((n, ch) => n + ch.sections.filter((s) => isDone(s.id)).length, 0);
+  const goto = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const notes = course.analysis_notes?.missing_or_ambiguous ?? [];
   return (
-    <div className="stack" style={{ gap: "1rem" }}>
-      {p && (
-        <div className="card stack">
-          <div className="row" style={{ justifyContent: "space-between" }}>
-            <strong>{t("progress")}</strong>
-            <span className="small muted">{p.sections_done}/{p.sections_total} {t("sectionsDone")}</span>
-          </div>
-          <ProgressBar value={p.sections_total ? p.sections_done / p.sections_total : 0} label={t("progress")} />
-          <span className="small muted">{t("criteriaText")}</span>
-        </div>
+    <div className="overview">
+      <div className="ov-progress" title={t("criteriaText")}>
+        <span className="ov-progress-label">{t("progress")}</span>
+        <ProgressBar value={nSections ? nDone / nSections : 0} label={t("progress")} />
+        <span className="ov-progress-count">{p ? p.sections_done : nDone}/{p ? p.sections_total : nSections} {t("sectionsDone")}</span>
+      </div>
+      <p className="ov-criteria">{t("criteriaText")}</p>
+
+      <details className="outline">
+        <summary>
+          <Icon name="book" size={15} /> <span className="outline-title">{t("outline")}</span>
+          <span className="outline-meta">{course.chapters.length} {t("chaptersShort")} · {nSections} {t("sectionsShort")}</span>
+        </summary>
+        <ol className="outline-list">
+          {course.chapters.map((ch) => (
+            <li key={ch.id}>
+              <a href={`#ch-${ch.id}`} className="outline-ch" onClick={(e) => { e.preventDefault(); goto(`chapter-${ch.id}`); }}><Rich text={ch.title} /></a>
+              <ol>
+                {ch.sections.map((s) => (
+                  <li key={s.id} className={isDone(s.id) ? "is-done" : undefined}>
+                    <a href={`#section-${s.id}`} onClick={(e) => { e.preventDefault(); goto(`section-${s.id}`); }}>
+                      <span className="outline-dot" aria-hidden="true">{isDone(s.id) ? <Icon name="check" size={11} /> : null}</span>
+                      <Rich text={s.title} />
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </li>
+          ))}
+        </ol>
+      </details>
+
+      {notes.length > 0 && (
+        <details className="clara-note">
+          <summary><Icon name="spark" size={14} /> {t("missing")} <span className="muted">· Clara · {notes.length}</span></summary>
+          <ul>{notes.map((n, i) => <li key={i}><Rich text={n} /></li>)}</ul>
+        </details>
       )}
-      {course.analysis_notes && course.analysis_notes.missing_or_ambiguous.length > 0 && (
-        <div className="alert small"><strong>{t("missing")} (Clara):</strong> {course.analysis_notes.missing_or_ambiguous.join(" · ")}</div>
-      )}
-      <nav className="toc" aria-label="sections">
-        {course.chapters.flatMap((ch) => ch.sections).map((s) => (
-          <a key={s.id} href={`#section-${s.id}`} className={`chip${isDone(s.id) ? " done" : ""}`} aria-pressed={isDone(s.id)} style={{ textDecoration: "none" }}
-            onClick={(e) => { e.preventDefault(); document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: "smooth" }); }}>
-            {isDone(s.id) && <Icon name="check" size={12} />} {s.title.length > 28 ? s.title.slice(0, 27) + "…" : s.title}
-          </a>
-        ))}
-      </nav>
+
       {course.chapters.map((ch) => {
         const chProg = p?.chapters.find((c) => c.chapter_id === ch.id);
         return (
-          <section key={ch.id} className="card" aria-labelledby={`ch-${ch.id}`}>
-            <div className="row" style={{ justifyContent: "space-between" }}>
-              <h2 id={`ch-${ch.id}`} style={{ margin: 0 }}>{ch.title}</h2>
-              <div className="row">
+          <section key={ch.id} id={`chapter-${ch.id}`} className="card chapter" aria-labelledby={`ch-${ch.id}`}>
+            <header className="chapter-head">
+              <div className="chapter-titles">
+                <h2 id={`ch-${ch.id}`}><Rich text={ch.title} /></h2>
+                {ch.summary && <Rich as="p" className="chapter-summary" text={ch.summary} />}
+              </div>
+              <div className="chapter-tools">
                 {chProg?.complete && <span className="badge badge-success"><Icon name="check" size={12} /> {t("done")}</span>}
-                <button className="btn btn-sm" aria-pressed={ch.i_voted_hard} onClick={() => hard(ch.id)}>
-                  <Icon name="star" size={14} className={ch.i_voted_hard ? "" : "muted"} /> {t("thisChapterIsHard")} · {ch.hard_votes}
+                <button className="btn btn-sm btn-quiet" aria-pressed={ch.i_voted_hard} onClick={() => hard(ch.id)} title={t("thisChapterIsHard")}>
+                  <Icon name="star" size={14} className={ch.i_voted_hard ? "" : "muted"} /> <span className="hide-sm">{t("thisChapterIsHard")}</span> <span className="count">{ch.hard_votes}</span>
                 </button>
               </div>
-            </div>
-            {ch.summary && <div className="muted" style={{ marginTop: 4 }}><Rich text={ch.summary} /></div>}
+            </header>
             {ch.sections.map((s) => {
               const tr = responses.data?.filter((r) => r.section_id === s.id) ?? [];
+              const done = isDone(s.id);
               return (
-                <div key={s.id} className="section-block stack" id={`section-${s.id}`}>
-                  <div className="row" style={{ justifyContent: "space-between" }}>
-                    <h3 style={{ margin: 0 }}>{s.title}</h3>
+                <article key={s.id} className={`section-block${done ? " is-done" : ""}`} id={`section-${s.id}`}>
+                  <header className="section-head">
+                    <h3><Rich text={s.title} /></h3>
                     <Citations refs={s.citations} map={course.refs} />
-                  </div>
-                  <Rich as="div" text={s.content} />
+                  </header>
+                  <Rich as="div" className="prose" text={s.content} />
                   {s.objectives.length > 0 && (
-                    <div className="small"><strong>{t("objectives")}:</strong> {s.objectives.join(" · ")}</div>
+                    <div className="sec-part">
+                      <div className="sec-label">{t("objectives")}</div>
+                      <ul className="obj-list">{s.objectives.map((o, i) => <li key={i}><Rich text={o} /></li>)}</ul>
+                    </div>
                   )}
                   {s.key_terms.length > 0 && (
-                    <div className="small">
-                      <strong>{t("keyTerms")}</strong>
-                      <ul className="term-list">{s.key_terms.map((k) => <li key={k.term}><strong><Rich text={k.term} /></strong> — <Rich text={k.definition} /></li>)}</ul>
+                    <div className="sec-part">
+                      <div className="sec-label">{t("keyTerms")}</div>
+                      <dl className="terms">{s.key_terms.map((k) => (
+                        <div key={k.term} className="term"><dt><Rich text={k.term} /></dt><dd><Rich text={k.definition} /></dd></div>
+                      ))}</dl>
                     </div>
                   )}
                   {s.formulas.length > 0 && (
-                    <div className="small">
-                      <strong>{t("formulas")}</strong>
-                      <ul className="term-list">{s.formulas.map((f) => <li key={f.name}>{f.name}: <span className="formula"><Rich text={f.expression} /></span> {f.meaning && <span className="muted">— <Rich text={f.meaning} /></span>}</li>)}</ul>
+                    <div className="sec-part">
+                      <div className="sec-label">{t("formulas")}</div>
+                      <div className="formulas">{s.formulas.map((f) => (
+                        <div key={f.name} className="formula-card">
+                          <span className="formula-name"><Rich text={f.name} /></span>
+                          <span className="formula"><Rich text={f.expression} math /></span>
+                          {f.meaning && <span className="formula-meaning"><Rich text={f.meaning} /></span>}
+                        </div>
+                      ))}</div>
                     </div>
                   )}
-                  {s.hard_points.length > 0 && <div className="alert alert-warning small"><strong>{t("hardPoints")}:</strong> <Rich text={s.hard_points.join(" · ")} /></div>}
+                  {s.hard_points.length > 0 && (
+                    <div className="alert alert-warning small hard-points">
+                      <strong>{t("hardPoints")}</strong>
+                      <ul>{s.hard_points.map((h, i) => <li key={i}><Rich text={h} /></li>)}</ul>
+                    </div>
+                  )}
                   {tr.map((r) => (
-                    <div key={r.id} className="alert alert-success small"><strong>{t("teacherResponses")} · {t(`kind_${r.kind}` as MessageKey)}:</strong> {r.body}</div>
+                    <div key={r.id} className="alert alert-success small"><strong>{t("teacherResponses")} · {t(`kind_${r.kind}` as MessageKey)} :</strong> <Rich text={r.body} /></div>
                   ))}
-                  <div className="row">
-                    <button className="btn btn-sm" disabled={isDone(s.id)} onClick={() => complete(s.id)}>{isDone(s.id) ? <><Icon name="check" size={13} /> {t("done")}</> : t("markDone")}</button>
+                  <footer className="section-actions">
+                    <button className={`btn btn-sm${done ? " btn-done" : ""}`} disabled={done} onClick={() => complete(s.id)}>{done ? <><Icon name="check" size={13} /> {t("done")}</> : t("markDone")}</button>
                     <ConfusionSignal section={s} />
-                  </div>
-                </div>
+                  </footer>
+                </article>
               );
             })}
           </section>

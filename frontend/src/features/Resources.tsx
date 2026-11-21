@@ -7,6 +7,7 @@ import { Rich } from "../components/Rich";
 import { useToast } from "../components/Toast";
 import { Empty, ErrorBox, Spinner, Tabs } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
+import { texToPlain } from "../components/Rich";
 
 function Shared({ course }: { course: CourseDetail }) {
   const { t } = useI18n();
@@ -38,7 +39,7 @@ function Shared({ course }: { course: CourseDetail }) {
     <div className="stack">
       <div className="row">
         <select value={chapter ?? ""} onChange={(e) => setChapter(e.target.value)} style={{ maxWidth: 380 }} aria-label="Chapter">
-          {course.chapters.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+          {course.chapters.map((c) => <option key={c.id} value={c.id}>{texToPlain(c.title)}</option>)}
         </select>
         <button className="btn btn-primary btn-sm" onClick={() => setOpen((v) => !v)}><Icon name="plus" size={14} /> {t("share")}</button>
       </div>

@@ -39,11 +39,12 @@ const SUGGESTIONS: Record<string, { text: string; mode: NovaMode }[]> = {
   derja: [{ text: "فسّرلي الفصل الأول", mode: "ask" }, { text: "شنوّة لازمني نعرف قبل؟", mode: "ask" }, { text: "اسألني سؤال باش نثبّت", mode: "socratic" }],
 };
 
-export function NovaPanel({ courseId, refs, request, onOpenTab }: {
+export function NovaPanel({ courseId, refs, request, onOpenTab, onClose }: {
   courseId: string;
   refs: Record<string, RefT> | undefined;
   request: NovaRequest | null;
   onOpenTab: (tab: string) => void;
+  onClose?: () => void;
 }) {
   const { t, lang } = useI18n();
   const history = useNovaHistory(courseId);
@@ -133,6 +134,7 @@ export function NovaPanel({ courseId, refs, request, onOpenTab }: {
           <strong style={{ fontFamily: "var(--display)", fontSize: "1.05rem" }}>Nova</strong>
           <div className="tiny muted">Sam · Clara · Alex · Quinn · Sage · Max · Jordan</div>
         </div>
+        {onClose && <button type="button" className="btn btn-ghost btn-icon nova-close" onClick={onClose} aria-label={t("close")}><Icon name="x" size={18} /></button>}
       </div>
       <div className="nova-log" ref={logRef} aria-live="polite">
         <div className="msg msg-bot" style={{ borderStyle: "dashed" }}>{t("novaHello")}{lang === "derja" && <div className="small muted" style={{ marginTop: 6 }}>{t("derjaNote")}</div>}</div>

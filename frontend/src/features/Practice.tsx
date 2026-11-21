@@ -102,7 +102,7 @@ function Runner({ id, course, ask, onClose }: { id: string; course: CourseDetail
       <div className="row between">
         <div className="stack" style={{ gap: 2 }}>
           <span className="eyebrow">{{ exercise: t("exercise"), chapter_quiz: t("chapterQuiz"), mock_exam: t("mockExam") }[a.data.kind] ?? a.data.kind}</span>
-          <h2 style={{ margin: 0 }}>{a.data.title}</h2>
+          <h2 style={{ margin: 0 }}><Rich text={a.data.title} /></h2>
         </div>
         <div className="row"><SpeechSettings /><QualityBadge status={a.data.quality_status} /><button className="btn btn-sm btn-ghost btn-icon" onClick={onClose} aria-label="close"><Icon name="x" /></button></div>
       </div>
@@ -211,8 +211,11 @@ export function Practice({ course, ask }: { course: CourseDetail; ask: Ask }) {
                   <button key={a.id} className="card card-hover row" style={{ textAlign: "start", font: "inherit", cursor: "pointer", color: "inherit", flexWrap: "nowrap" }} onClick={() => setOpen(a.id)}>
                     <div className="ring" style={{ ["--p" as string]: pct ?? 0, width: 52, height: 52, fontSize: "0.78rem" }}><span>{pct === null ? "—" : `${pct}%`}</span></div>
                     <div className="stack" style={{ gap: 2, minWidth: 0 }}>
-                      <strong style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{a.title.replace(/^(Quiz|Exercices) — /, "")}</strong>
-                      <span className="row tiny muted">{a.questions} Q{a.problems ? ` · ${a.problems} ${t("problems").toLowerCase()}` : ""} · <QualityBadge status={a.quality_status} /></span>
+                      <strong className="assess-title"><Rich text={a.title.replace(/^(Quiz|Exercices) — /, "")} /></strong>
+                      <span className="row tiny muted" style={{ gap: "0.45rem" }}>
+                        <span>{a.questions} Q{a.problems ? ` · ${a.problems} ${t("problems").toLowerCase()}` : ""}</span>
+                        <QualityBadge status={a.quality_status} />
+                      </span>
                     </div>
                   </button>
                 );

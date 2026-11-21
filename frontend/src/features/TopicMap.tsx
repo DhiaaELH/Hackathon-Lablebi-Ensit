@@ -1,8 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useProgress, useRevision } from "../api/hooks";
 import type { CourseDetail } from "../api/types";
 import { Empty, Spinner } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
+import { texToPlain } from "../components/Rich";
+
+/** Split a label into at most two lines of ~maxChars, breaking on spaces; the second line gets an ellipsis if still too long. */
+function wrapLabel(label: string, maxChars = 24): string[] {
+  if (label.length <= maxChars) return [label];
+  const words = label.split(" ");
+  let first = "";
+  while (words.length && (first + " " + words[0]).trim().length <= maxChars) first = (first + " " + words.shift()).trim();
+  if (!first) first = words.shift() ?? "";
+  let second = words.join(" ");
+  if (second.length > maxChars) second = second.slice(0, maxChars - 1).trimEnd() + "…";
+  return second ? [first, second] : [first];
+}
 
 /** Plain-code layered layout. Hover a concept to trace what it builds on (ancestors) and what builds on it;
  *  click to jump to its section. Node fill reflects the student's own concept progress. */
@@ -11,6 +24,19 @@ export function TopicMap({ course, onOpenSection }: { course: CourseDetail; onOp
   const r = useRevision(course.id);
   const progress = useProgress(course.id);
   const [hover, setHover] = useState<string | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState<"none" | "more" | "end">("none");
+  const measure = () => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setOverflow(max <= 2 ? "none" : Math.abs(el.scrollLeft) >= max - 2 ? "end" : "more");
+  };
+  useEffect(() => {
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  });
   const map = r.data?.topic_map;
   const hot = useMemo(() => {
     if (!hover || !map) return new Set<string>();
@@ -27,7 +53,7 @@ export function TopicMap({ course, onOpenSection }: { course: CourseDetail; onOp
   const score = new Map(progress.data?.concepts.map((c) => [c.concept_id, c.correct / Math.max(1, c.total)]) ?? []);
   const layers = new Map<number, typeof map.nodes>();
   map.nodes.forEach((n) => layers.set(n.layer, [...(layers.get(n.layer) ?? []), n]));
-  const colW = 220, rowH = 66, nodeW = 186, nodeH = 42, pad = 24;
+  const colW = 204, rowH = 62, nodeW = 174, nodeH = 50, pad = 18;
   const nCols = Math.max(...map.nodes.map((n) => n.layer)) + 1;
   const nRows = Math.max(...[...layers.values()].map((l) => l.length));
   const width = pad * 2 + nCols * colW - (colW - nodeW), height = pad * 2 + nRows * rowH;
@@ -43,14 +69,17 @@ export function TopicMap({ course, onOpenSection }: { course: CourseDetail; onOp
   };
   return (
     <div className="stack">
-      <div className="row tiny muted">
-        <span className="badge" style={{ background: "#e5f2e9" }}>solid</span><span className="badge" style={{ background: "#e1efec" }}>building</span>
-        <span className="badge" style={{ background: "#f8eedc" }}>needs practice</span><span className="badge">not tried</span>
-        <span>· hover = prerequisite chain · click = {t("open")}</span>
+      <div className="map-legend tiny muted">
+        <span className="legend-item"><i style={{ background: "#e5f2e9" }} /> {t("mapSolid")}</span>
+        <span className="legend-item"><i style={{ background: "#e1efec" }} /> {t("mapBuilding")}</span>
+        <span className="legend-item"><i style={{ background: "#f8eedc" }} /> {t("mapNeedsPractice")}</span>
+        <span className="legend-item"><i style={{ background: "#fffdf8" }} /> {t("mapNotTried")}</span>
+        <span className="legend-help">{t("mapHelp")}</span>
       </div>
-      <div className={`card topic-map${hover ? " focus" : ""}`}>
-        <div className="table-wrap">
-          <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={t("map")} style={{ minWidth: width, maxWidth: Math.max(width, 640) }}>
+      <div className={`card topic-map${hover ? " focus" : ""}${overflow === "more" ? " can-scroll" : ""}`}>
+        {overflow !== "none" && <span className="map-scroll-hint tiny muted" aria-hidden="true">↔</span>}
+        <div className="table-wrap" ref={wrapRef} onScroll={measure}>
+          <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={t("map")} style={{ width: "100%", minWidth: Math.round(width * 0.8), maxWidth: Math.max(width, 640) }}>
             <defs>
               <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a948f" /></marker>
             </defs>
@@ -66,11 +95,20 @@ export function TopicMap({ course, onOpenSection }: { course: CourseDetail; onOp
             {map.nodes.map((n) => {
               const p = pos.get(n.id)!;
               return (
-                <g key={n.id} className={`topic-node${hot.has(n.id) ? " hot" : ""}`} tabIndex={0} role="button" aria-label={n.label}
+                <g key={n.id} className={`topic-node${hot.has(n.id) ? " hot" : ""}`} tabIndex={0} role="button" aria-label={texToPlain(n.label)}
                   onMouseEnter={() => setHover(n.id)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(n.id)} onBlur={() => setHover(null)}
                   onClick={() => n.section_id && onOpenSection(n.section_id)} onKeyDown={(e) => { if (e.key === "Enter" && n.section_id) onOpenSection(n.section_id); }}>
                   <rect x={p.x} y={p.y} width={nodeW} height={nodeH} rx={10} fill={fill(n.id)} stroke="#0e6b63" strokeWidth={1} />
-                  <text x={p.x + nodeW / 2} y={p.y + nodeH / 2 + 4} textAnchor="middle">{n.label.length > 27 ? n.label.slice(0, 26) + "…" : n.label}</text>
+                  {(() => {
+                    const lines = wrapLabel(texToPlain(n.label), 21);
+                    const y0 = p.y + nodeH / 2 + 5 - (lines.length - 1) * 8;
+                    return (
+                      <text x={p.x + nodeW / 2} y={y0} textAnchor="middle">
+                        <title>{texToPlain(n.label)}</title>
+                        {lines.map((ln, i) => <tspan key={i} x={p.x + nodeW / 2} dy={i === 0 ? 0 : 16}>{ln}</tspan>)}
+                      </text>
+                    );
+                  })()}
                 </g>
               );
             })}
