@@ -47,7 +47,7 @@ export function WhoToFollow({ limit = 4, compact }: { limit?: number; compact?: 
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="row" style={{ gap: "0.35rem" }}>
                 <strong className="small">{p.display_name}</strong>
-                {p.badge === "peer_tutor" && <span className="badge badge-primary" style={{ fontSize: "0.66rem" }}><Icon name="star" size={10} /> {t("peerTutor")}</span>}
+                {p.badge === "peer_tutor" && <span className="badge badge-primary" style={{ fontSize: "0.8rem" }}><Icon name="star" size={10} /> {t("peerTutor")}</span>}
               </div>
               <div className="tiny muted">{p.reasons?.length ? p.reasons.map(why).join(" · ") : p.reason}</div>
               <div className="row" style={{ marginTop: 6, gap: "0.35rem" }}>

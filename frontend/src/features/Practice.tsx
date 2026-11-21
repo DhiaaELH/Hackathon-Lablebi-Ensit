@@ -245,7 +245,7 @@ export function Practice({ course, ask }: { course: CourseDetail; ask: Ask }) {
                 const pct = a.best ? Math.round((a.best.score / Math.max(1, a.best.max)) * 100) : null;
                 return (
                   <button key={a.id} className="card card-hover row" style={{ textAlign: "start", font: "inherit", cursor: "pointer", color: "inherit", flexWrap: "nowrap" }} onClick={() => setOpen(a.id)}>
-                    <div className="ring" style={{ ["--p" as string]: pct ?? 0, width: 52, height: 52, fontSize: "0.78rem" }}><span>{pct === null ? "—" : `${pct}%`}</span></div>
+                    <div className="ring" style={{ ["--p" as string]: pct ?? 0, width: 52, height: 52, fontSize: "0.84rem" }}><span>{pct === null ? "—" : `${pct}%`}</span></div>
                     <div className="stack" style={{ gap: 2, minWidth: 0 }}>
                       <strong className="assess-title"><Rich text={a.title.replace(/^(Quiz|Exercices) — /, "")} /></strong>
                       <span className="row tiny muted" style={{ gap: "0.45rem" }}>

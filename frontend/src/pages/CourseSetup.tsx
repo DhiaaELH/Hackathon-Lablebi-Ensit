@@ -140,7 +140,7 @@ export function CourseSetup() {
         {tab === "paste" && (
           <div className="field">
             <label htmlFor="paste">{t("pasteText")}</label>
-            <textarea id="paste" value={text} onChange={(e) => setText(e.target.value)} placeholder={"# Chapitre 1 : …\n## 1.1 …\nTerme : définition\nFormule : $a^2 + b^2 = c^2$"} style={{ minHeight: 220, fontFamily: "var(--mono)", fontSize: "0.88rem" }} />
+            <textarea id="paste" value={text} onChange={(e) => setText(e.target.value)} placeholder={"# Chapitre 1 : …\n## 1.1 …\nTerme : définition\nFormule : $a^2 + b^2 = c^2$"} style={{ minHeight: 220, fontFamily: "var(--mono)", fontSize: "0.94rem" }} />
             <span className="tiny muted">{text.length.toLocaleString()} caractères</span>
           </div>
         )}

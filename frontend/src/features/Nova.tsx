@@ -171,7 +171,7 @@ export function NovaPanel({ courseId, refs, request, onOpenTab, onClose, full, o
           <div key={l.key} className={`msg ${l.role === "user" ? "msg-user" : "msg-bot"}`}>
             {l.role === "assistant" && (
               <div className="handoff">
-                <span className="avatar" style={{ width: 18, height: 18, fontSize: 9, display: "inline-grid", marginInlineEnd: 4 }} aria-hidden="true">{AGENT_INITIAL[l.agent === "sam" ? "sam" : "nova"]}</span>
+                <span className="avatar" style={{ width: 20, height: 20, fontSize: 11, display: "inline-grid", marginInlineEnd: 4 }} aria-hidden="true">{AGENT_INITIAL[l.agent === "sam" ? "sam" : "nova"]}</span>
                 {who(l.agent)}
                 {l.demo && <span className="badge badge-warning" style={{ marginInlineStart: 6 }}>{t("demo")}</span>}
                 {l.supported === false && <span className="badge badge-error" style={{ marginInlineStart: 6 }}>{t("notInCourse")}</span>}
