@@ -79,7 +79,7 @@ export const Constellation = forwardRef<ConstellationHandle, Props>(function Con
     const css = getComputedStyle(document.documentElement);
     const INK = css.getPropertyValue("--ink").trim() || "#1d2a2f";
     const ACCENT = css.getPropertyValue("--primary").trim() || "#0e6b63";
-    const WARN = "#a8321f";
+    const WARN = "#ff4d4d";
     let w = 0, h = 0, dpr = 1, raf = 0, last = performance.now();
     let nodes: Node[] = [];
     const ripples: Ripple[] = [];
@@ -93,17 +93,17 @@ export const Constellation = forwardRef<ConstellationHandle, Props>(function Con
     let miss: { a: Node; b: Node; life: number } | null = null;
     let paper: HTMLCanvasElement | null = null;
     const rnd = (a: number, b: number) => a + Math.random() * (b - a);
-    const font = (n: Node) => `${n.glyph ? "500" : "400"} ${n.size}px ${n.glyph ? "Fraunces, serif" : "'IBM Plex Sans', sans-serif"}`;
+    const font = (n: Node) => `${n.glyph ? "700" : "400"} ${n.size}px ${n.glyph ? "Kalam, cursive" : "'Patrick Hand', sans-serif"}`;
 
     function drawPaper() {
       paper = document.createElement("canvas");
       paper.width = w * dpr; paper.height = h * dpr;
       const p = paper.getContext("2d")!;
       p.scale(dpr, dpr);
-      p.strokeStyle = "rgba(29,42,47,0.045)";
+      p.strokeStyle = "rgba(45,45,45,0.05)";
       for (let x = 0; x < w; x += 28) { p.beginPath(); p.moveTo(x + 0.5, 0); p.lineTo(x + 0.5, h); p.stroke(); }
       for (let y = 0; y < h; y += 28) { p.beginPath(); p.moveTo(0, y + 0.5); p.lineTo(w, y + 0.5); p.stroke(); }
-      p.strokeStyle = "rgba(180,83,9,0.10)";
+      p.strokeStyle = "rgba(255,77,77,0.22)";
       const mx = Math.min(96, w * 0.08);
       p.beginPath(); p.moveTo(mx, 0); p.lineTo(mx, h); p.stroke();
     }

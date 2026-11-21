@@ -23,7 +23,7 @@ interface Edge { from: string; to: string }
 
 const COL_W = 200, ROW_H = 60, NODE_W = 170, NODE_H = 46, PAD = 16, MAX_ROWS = 7;
 const MIN_ZOOM = 0.4, MAX_ZOOM = 1.8, MIN_FIT = 0.75;
-const FILL = { solid: "#e5f2e9", building: "#e1efec", practice: "#f8eedc", none: "#fffdf8" };
+const FILL = { solid: "#e3f4dc", building: "#e4ecf8", practice: "#fff9c4", none: "#ffffff" };
 
 /** Columns = prerequisite depth inside the visible subset; a crowded depth is split over several columns so no column gets taller than MAX_ROWS. */
 function layout(nodes: Node[], edges: Edge[], rtl: boolean) {
@@ -235,7 +235,7 @@ export function TopicMap({ course, onOpenSection }: { course: CourseDetail; onOp
           <div className="map-viewport" ref={boxRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerLeave={endDrag}>
             <svg viewBox={`0 0 ${lay.width} ${lay.height}`} role="img" aria-label={t("map")} width={Math.round(lay.width * scale)} height={Math.round(lay.height * scale)}>
               <defs>
-                <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a948f" /></marker>
+                <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2d2d2d" /></marker>
               </defs>
               {map.edges.map((e, i) => {
                 const a = lay.pos.get(e.from), b = lay.pos.get(e.to);
@@ -244,7 +244,7 @@ export function TopicMap({ course, onOpenSection }: { course: CourseDetail; onOp
                 const x1 = forward !== rtl ? a.x + NODE_W : a.x, x2 = forward !== rtl ? b.x : b.x + NODE_W;
                 const isHot = !!focus && hot.has(e.from) && hot.has(e.to);
                 return <path key={i} className={`topic-edge${isHot ? " hot" : ""}`} d={`M${x1},${a.y + NODE_H / 2} C${(x1 + x2) / 2},${a.y + NODE_H / 2} ${(x1 + x2) / 2},${b.y + NODE_H / 2} ${x2},${b.y + NODE_H / 2}`}
-                  fill="none" stroke="#b9b2a3" strokeWidth={1.4} markerEnd="url(#arrow)" />;
+                  fill="none" stroke="#8a8478" strokeWidth={1.6} strokeDasharray="6 3" markerEnd="url(#arrow)" />;
               })}
               {nodes.map((n) => {
                 const p = lay.pos.get(n.id)!;
@@ -254,7 +254,7 @@ export function TopicMap({ course, onOpenSection }: { course: CourseDetail; onOp
                   <g key={n.id} className={`topic-node${hot.has(n.id) ? " hot" : ""}${selected === n.id ? " selected" : ""}`} tabIndex={0} role="button" aria-pressed={selected === n.id}
                     aria-label={texToPlain(n.label)} onMouseEnter={() => setHover(n.id)} onMouseLeave={() => setHover(null)}
                     onClick={() => clickNode(n.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(selected === n.id ? null : n.id); } }}>
-                    <rect x={p.x} y={p.y} width={NODE_W} height={NODE_H} rx={10} fill={fill(n.id)} stroke="#0e6b63" strokeWidth={1} />
+                    <rect x={p.x} y={p.y} width={NODE_W} height={NODE_H} rx={12} fill={fill(n.id)} stroke="#2d2d2d" strokeWidth={2} />
                     <text x={p.x + NODE_W / 2} y={y0} textAnchor="middle">
                       <title>{texToPlain(n.label)}</title>
                       {lines.map((ln, i) => <tspan key={i} x={p.x + NODE_W / 2} dy={i === 0 ? 0 : 16}>{ln}</tspan>)}

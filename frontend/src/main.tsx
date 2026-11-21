@@ -8,6 +8,7 @@ import { SpeechProvider } from "./components/Speech";
 import { ToastProvider } from "./components/Toast";
 import { I18nProvider } from "./i18n/I18n";
 import "./styles.css";
+import "./sketch.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
