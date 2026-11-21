@@ -140,8 +140,9 @@ def vote(post_id: uuid.UUID, body: VoteIn, user=Depends(current_user), db: Sessi
 @router.post("/posts/{post_id}/accept")
 def accept(post_id: uuid.UUID, user=Depends(current_user), db: Session = Depends(get_db)):
     p, t = _post(db, user, post_id)
-    if t.author_id != user.id and role_of(user) not in STAFF:
-        raise HTTPException(403, "Only the question author, a peer tutor or a teacher can accept an answer")
+    # The asker decides; peer tutors and teachers may also settle a thread, but never by accepting their own answer.
+    if t.author_id != user.id and (role_of(user) not in STAFF or p.author_id == user.id):
+        raise HTTPException(403, "Only the question author, a peer tutor or a teacher can accept an answer (not your own)")
     for other in db.scalars(select(Post).where(Post.thread_id == t.id)):
         other.accepted = other.id == p.id
     db.commit()
