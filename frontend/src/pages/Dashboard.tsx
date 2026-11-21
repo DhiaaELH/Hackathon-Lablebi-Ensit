@@ -161,10 +161,10 @@ export function Dashboard() {
 
       <div className="grid dash-top">
         {recent ? (
-          <Link to={`/courses/${recent.id}`} className="card card-hover stack" style={{ color: "inherit", textDecoration: "none", background: "var(--ink)", borderColor: "var(--ink)" }}>
-            <span className="eyebrow" style={{ color: "#a9b8b5" }}>{t("continueLearning")}</span>
-            <h2 style={{ color: "var(--paper)", margin: 0, fontSize: "1.6rem" }}>{recent.title.replace("[DÉMO] ", "")}</h2>
-            <span className="small" style={{ color: "#c9d3d1" }}>{recent.chapter_count} ch. · Nova · {t("practice")} · {t("revision")} · {t("community")}</span>
+          <Link to={`/courses/${recent.id}`} className="card card-hover stack continue-card" style={{ textDecoration: "none" }}>
+            <span className="eyebrow">{t("continueLearning")}</span>
+            <h2 style={{ margin: 0 }}>{recent.title.replace("[DÉMO] ", "")}</h2>
+            <span className="small" style={{ color: "var(--ink-2)" }}>{recent.chapter_count} ch. · Nova · {t("practice")} · {t("revision")} · {t("community")}</span>
             <span className="btn btn-accent btn-sm" style={{ alignSelf: "flex-start", marginTop: "0.6rem" }}>{t("open")} <Icon name="arrow" size={14} /></span>
           </Link>
         ) : <div />}
