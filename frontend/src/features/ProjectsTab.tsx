@@ -5,6 +5,7 @@ import type { CourseDetail } from "../api/types";
 import { ErrorBox, ProgressBar, Spinner } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 import { Rich } from "../components/Rich";
+import { Icon } from "../components/Icon";
 
 export function ProjectsTab({ course }: { course: CourseDetail }) {
   const { t } = useI18n();
@@ -33,13 +34,13 @@ export function ProjectsTab({ course }: { course: CourseDetail }) {
 
   return (
     <div className="stack" style={{ gap: "1rem" }}>
-      <div className="alert small"><strong>{t("completionCriteria")}:</strong> {p.data?.criteria}</div>
+      <div className="alert small"><strong>{t("completionCriteria")}:</strong> {t("criteriaText")}</div>
       {err != null && <ErrorBox error={err} />}
       {p.data?.chapters.map((ch) => (
         <section key={ch.chapter_id} className="card stack">
           <div className="row" style={{ justifyContent: "space-between" }}>
             <h2 style={{ margin: 0 }}>{ch.chapter}</h2>
-            {ch.unlocked ? <span className="badge badge-success">✓</span> : <span className="badge">🔒</span>}
+            {ch.unlocked ? <span className="badge badge-success">✓</span> : <span className="badge"><Icon name="lock" size={12} /></span>}
           </div>
           {!ch.unlocked && <p className="muted small" style={{ margin: 0 }}>{t("lockedProjects")}</p>}
           {ch.unlocked && ch.projects.length === 0 && (

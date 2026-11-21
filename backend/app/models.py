@@ -69,6 +69,8 @@ class Profile(Base):
     locale: Mapped[str] = mapped_column(String(10), default="fr")  # fr|en|ar|derja
     derja_script: Mapped[str] = mapped_column(String(10), default="arabic")  # arabic|latin
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    bio: Mapped[str | None] = mapped_column(String(300))
+    show_follows: Mapped[bool] = mapped_column(Boolean, default=False)  # follower counts are private unless opted in
     user: Mapped[User] = relationship(back_populates="profile")
     __table_args__ = (CheckConstraint("role in ('student','senior','teacher','admin')", name="ck_profile_role"),)
 
@@ -469,10 +471,12 @@ class HardChapterVote(Base):
     created_at: Mapped[datetime] = ts()
 
 
-class SharedResource(Base):  # [deferred API]
+class SharedResource(Base):
     __tablename__ = "shared_resources"
     id: Mapped[uuid.UUID] = pk()
+    course_id: Mapped[uuid.UUID] = fk("courses.id")
     chapter_id: Mapped[uuid.UUID] = fk("chapters.id")
+    status: Mapped[str] = mapped_column(String(12), default="active")  # active|removed
     author_id: Mapped[uuid.UUID] = fk("users.id")
     kind: Mapped[str] = mapped_column(String(20))  # note|summary|solved_exercise|video_url
     title: Mapped[str] = mapped_column(String(300))
@@ -482,7 +486,7 @@ class SharedResource(Base):  # [deferred API]
     created_at: Mapped[datetime] = ts()
 
 
-class ResourceRating(Base):  # [deferred API]
+class ResourceRating(Base):
     __tablename__ = "resource_ratings"
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     resource_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("shared_resources.id", ondelete="CASCADE"), primary_key=True)
@@ -501,26 +505,81 @@ class GlossaryTerm(Base):
     example: Mapped[str | None] = mapped_column(Text)
     contributor_id: Mapped[uuid.UUID | None] = fk("users.id", nullable=True, ondelete="SET NULL")
     review_state: Mapped[str] = mapped_column(String(12), default="pending")  # pending|reviewed
+    created_at: Mapped[datetime] = ts()
 
 
-class ExamPaper(Base):  # [deferred API]
+class ExamPaper(Base):
+    """Past-paper metadata + student-typed questions (no scanned files: rights must be confirmed)."""
     __tablename__ = "exam_papers"
     id: Mapped[uuid.UUID] = pk()
-    subject_id: Mapped[uuid.UUID | None] = fk("subjects.id", nullable=True)
+    course_id: Mapped[uuid.UUID | None] = fk("courses.id", nullable=True)
+    faculty: Mapped[str] = mapped_column(String(160))
+    subject: Mapped[str] = mapped_column(String(160))
     year: Mapped[int] = mapped_column(Integer)
+    session: Mapped[str] = mapped_column(String(20), default="principale")  # principale|contrôle|DS
     title: Mapped[str] = mapped_column(String(300))
+    content: Mapped[str] = mapped_column(Text, default="")
     uploader_id: Mapped[uuid.UUID] = fk("users.id")
     rights_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
-    chapter_tags: Mapped[list] = mapped_column(JSONB, default=list)
+    chapter_tags: Mapped[list] = mapped_column(JSONB, default=list)  # chapter ids covered
+    status: Mapped[str] = mapped_column(String(12), default="active")
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = ts()
 
 
-class ExamCorrection(Base):  # [deferred API]
+class ExamCorrection(Base):
     __tablename__ = "exam_corrections"
     id: Mapped[uuid.UUID] = pk()
     exam_id: Mapped[uuid.UUID] = fk("exam_papers.id")
     author_id: Mapped[uuid.UUID] = fk("users.id")
     body: Mapped[str] = mapped_column(Text)
-    score: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(12), default="active")
+    created_at: Mapped[datetime] = ts()
+
+
+class ExamCorrectionVote(Base):
+    __tablename__ = "exam_correction_votes"
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    correction_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("exam_corrections.id", ondelete="CASCADE"), primary_key=True)
+    value: Mapped[int] = mapped_column(Integer)
+
+
+# ---------------------------------------------------------------- "verified by students" on AI content
+class QuestionEndorsement(Base):
+    __tablename__ = "question_endorsements"
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    question_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("questions.id", ondelete="CASCADE"), primary_key=True)
+    created_at: Mapped[datetime] = ts()
+
+
+class QuestionCorrection(Base):
+    """Community-proposed correction of an AI explanation/answer. Accepted at >= 3 upvotes. Kept as history."""
+    __tablename__ = "question_corrections"
+    id: Mapped[uuid.UUID] = pk()
+    question_id: Mapped[uuid.UUID] = fk("questions.id")
+    author_id: Mapped[uuid.UUID] = fk("users.id")
+    body: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(12), default="open")  # open|accepted|removed
+    created_at: Mapped[datetime] = ts()
+
+
+class CorrectionVote(Base):
+    __tablename__ = "correction_votes"
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    correction_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("question_corrections.id", ondelete="CASCADE"), primary_key=True)
+
+
+# ---------------------------------------------------------------- spaced repetition (SM-2)
+class FlashcardReview(Base):
+    __tablename__ = "flashcard_reviews"
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    course_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), primary_key=True)
+    card_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    ease: Mapped[float] = mapped_column(Float, default=2.5)
+    interval_days: Mapped[int] = mapped_column(Integer, default=0)
+    reps: Mapped[int] = mapped_column(Integer, default=0)
+    due: Mapped[date] = mapped_column(Date)
+    updated_at: Mapped[datetime] = ts()
 
 
 class ContentReport(Base):
@@ -534,7 +593,7 @@ class ContentReport(Base):
     created_at: Mapped[datetime] = ts()
 
 
-# ---------------------------------------------------------------- social [deferred API: Phase 3]
+# ---------------------------------------------------------------- social
 class Follow(Base):
     __tablename__ = "follows"
     follower_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
@@ -549,8 +608,14 @@ class Block(Base):
 
 
 class Conversation(Base):
+    """1:1 private conversation, or a study group when is_group is true."""
     __tablename__ = "conversations"
     id: Mapped[uuid.UUID] = pk()
+    is_group: Mapped[bool] = mapped_column(Boolean, default=False)
+    title: Mapped[str | None] = mapped_column(String(160))
+    course_id: Mapped[uuid.UUID | None] = fk("courses.id", nullable=True)
+    exam_date: Mapped[date | None] = mapped_column(Date)
+    created_by: Mapped[uuid.UUID | None] = fk("users.id", nullable=True, ondelete="SET NULL")
     created_at: Mapped[datetime] = ts()
 
 
@@ -558,6 +623,7 @@ class ConversationParticipant(Base):
     __tablename__ = "conversation_participants"
     conversation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), primary_key=True)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    last_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Message(Base):
@@ -569,8 +635,9 @@ class Message(Base):
     created_at: Mapped[datetime] = ts()
 
 
-class Recommendation(Base):  # [deferred API: Phase 3]
+class Recommendation(Base):
     __tablename__ = "recommendations"
+    __table_args__ = (UniqueConstraint("user_id", "target_type", "target_id"),)
     id: Mapped[uuid.UUID] = pk()
     user_id: Mapped[uuid.UUID] = fk("users.id")
     target_type: Mapped[str] = mapped_column(String(20))
@@ -580,7 +647,7 @@ class Recommendation(Base):  # [deferred API: Phase 3]
     created_at: Mapped[datetime] = ts()
 
 
-class RecommendationFeedback(Base):  # [deferred API: Phase 3]
+class RecommendationFeedback(Base):
     __tablename__ = "recommendation_feedback"
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     recommendation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("recommendations.id", ondelete="CASCADE"), primary_key=True)

@@ -3,6 +3,10 @@ import tempfile
 
 os.environ.setdefault("LF_PGDATA", os.path.join(tempfile.gettempdir(), "lessonforge-test-pgdata"))
 os.environ["LLM_PROVIDER"] = "demo"
+os.environ["GEMINI_API_KEY"] = ""  # tests never use real keys from .env
+os.environ["ANTHROPIC_API_KEY"] = ""
+os.environ["LLM_FAST"] = ""
+os.environ["LLM_SMART"] = ""
 os.environ["DATABASE_URL"] = ""
 
 import pytest  # noqa: E402

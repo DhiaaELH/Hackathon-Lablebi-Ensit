@@ -121,9 +121,9 @@ def _specialist_summary(db: Session, course, role: str, message: str, lang: str,
                     match.citations, {"open": "map"})
         return f"Clara found {len(concepts)} concepts. The Topic map shows how they depend on each other.", [], {"open": "map"}
     if role == "resource_finder":
-        if not get_settings().search_api_key:
+        if not get_settings().gemini_api_key:
             return "No verified external resource: the search service is not configured on this server, so I won't suggest links.", [], None
-        return "The Resource Finder adapter is configured but not enabled in this build; no verified link to show.", [], None
+        return "The Resource Finder searches the web and checks every link before showing it. Open the Resources tab to run it.", [], {"open": "resources"}
     if role == "riley":
         db.add(ContentReport(reporter_id=user.id, target_type="ai_content", target_id=str(course.id), reason=message[:1000]))
         db.commit()
@@ -141,7 +141,7 @@ def nova(course_id: uuid.UUID, body: NovaIn, user=Depends(current_user), db: Ses
     db.add(TutorMessage(conversation_id=conv.id, role="user", agent_role=None, mode=body.mode, content=body.message))
     db.commit()
 
-    question = None
+    question, a = None, None
     if body.question_id:
         q = db.get(Question, body.question_id)
         a = db.get(Assessment, q.assessment_id) if q else None
@@ -181,7 +181,8 @@ def nova(course_id: uuid.UUID, body: NovaIn, user=Depends(current_user), db: Ses
                                 "citations": [], "supported": None, "error": True, "demo": False})
                 continue
             if body.mode == "hint":
-                db.add(ProgressEvent(user_id=user.id, course_id=course.id, kind="hint", ref_id=None, data={"level": body.hint_level}))
+                hint_section = str(a.section_id) if question and a.section_id else None
+                db.add(ProgressEvent(user_id=user.id, course_id=course.id, kind="hint", ref_id=hint_section, data={"level": body.hint_level}))
             db.add(TutorMessage(conversation_id=conv.id, role="user", agent_role="sam", mode=body.mode, content=message, meta={"replay": rendered}))
             db.add(TutorMessage(conversation_id=conv.id, role="assistant", agent_role="sam", mode=body.mode, content=data["message"], citations=data["citations"],
                                 meta={"replay": json.dumps(data, ensure_ascii=False, sort_keys=True), "method": data.get("method"), "demo": demo}))

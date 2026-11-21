@@ -141,7 +141,13 @@ def riley_review(db: Session, course: Course, lang: str, kind: str, payload: dic
     if is_demo():
         findings.append({"severity": "low", "item": "Riley", "issue": "Rule checks only: AI quality review not run in demo mode."})
         return ("revise" if high else "unverified"), findings
-    user = (f"{ROLE_PROMPTS['riley']}\n\n{language_instruction(lang)}\n\n<artifact kind=\"{kind}\">\n"
+    from ..models import GlossaryTerm
+
+    terms = db.scalars(select(GlossaryTerm).where(GlossaryTerm.course_id == course.id, GlossaryTerm.review_state == "reviewed").order_by(GlossaryTerm.term_fr)).all()
+    glossary = "\n".join(f"- {g.term_fr} | AR: {g.term_ar or '-'} | Derja: {g.term_derja or '-'} | EN: {g.term_en or '-'}: {g.explanation}" for g in terms)
+    user = (f"{ROLE_PROMPTS['riley']}\n\n{language_instruction(lang)}\n\n"
+            + (f"<glossary>\nCheck terminology against these reviewed terms:\n{glossary}\n</glossary>\n\n" if glossary else "")
+            + f"<artifact kind=\"{kind}\">\n"
             f"{json.dumps(payload, ensure_ascii=False, sort_keys=True)}\n</artifact>")
     try:
         report, _ = get_provider().structured("riley", _shared_prefix(db, course), [{"role": "user", "content": user}], QualityReport, effort="low")

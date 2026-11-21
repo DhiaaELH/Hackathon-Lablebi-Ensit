@@ -77,6 +77,10 @@ def submit_attempt(assessment_id: uuid.UUID, body: AttemptIn, user=Depends(curre
         results.append({**pq, "correct_index": q.correct_index, "explanation": q.explanation, "citations": q.citations,
                         "misconception": (q.distractor_notes[pq["chosen"]] if pq["chosen"] is not None and not pq["correct"] and pq["chosen"] < len(q.distractor_notes) else None),
                         "concept": concepts[q.concept_id].name if q.concept_id in concepts else None})
+    from .growth import community_state
+
+    for r in results:
+        r["community"] = community_state(db, user, qs[r["question_id"]])
     gaps = diagnose_gaps(db, user.id, a.course_id, attempt)
     return {"attempt_id": str(attempt.id), "score": attempt.score, "max": attempt.max_score, "results": results, "gaps": gaps}
 

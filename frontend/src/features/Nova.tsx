@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api } from "../api/client";
-import { useNovaHistory } from "../api/hooks";
+import { qk, useNovaHistory, useQueryClient } from "../api/hooks";
+import { Icon } from "../components/Icon";
 import type { NovaHistoryItem, NovaReply, RefT } from "../api/types";
 import { AGENT_INITIAL, AGENT_NAME, Citations } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
@@ -30,6 +31,12 @@ interface Line {
 }
 
 const MODES: NovaMode[] = ["ask", "socratic", "hint", "answer", "alternate"];
+const SUGGESTIONS: Record<string, { text: string; mode: NovaMode }[]> = {
+  fr: [{ text: "Résume-moi le chapitre 1", mode: "ask" }, { text: "Quels sont les prérequis ?", mode: "ask" }, { text: "Pose-moi une question pour vérifier", mode: "socratic" }],
+  en: [{ text: "Summarise chapter 1 for me", mode: "ask" }, { text: "What are the prerequisites?", mode: "ask" }, { text: "Quiz me with one question", mode: "socratic" }],
+  ar: [{ text: "لخّص لي الفصل الأول", mode: "ask" }, { text: "ما هي المتطلبات السابقة؟", mode: "ask" }, { text: "اسألني سؤالًا للتحقق", mode: "socratic" }],
+  derja: [{ text: "فسّرلي الفصل الأول", mode: "ask" }, { text: "شنوّة لازمني نعرف قبل؟", mode: "ask" }, { text: "اسألني سؤال باش نثبّت", mode: "socratic" }],
+};
 
 export function NovaPanel({ courseId, refs, request, onOpenTab }: {
   courseId: string;
@@ -39,6 +46,7 @@ export function NovaPanel({ courseId, refs, request, onOpenTab }: {
 }) {
   const { t, lang } = useI18n();
   const history = useNovaHistory(courseId);
+  const qc = useQueryClient();
   const [lines, setLines] = useState<Line[]>([]);
   const [mode, setMode] = useState<NovaMode>("ask");
   const [elapsed, setElapsed] = useState(0);
@@ -86,6 +94,7 @@ export function NovaPanel({ courseId, refs, request, onOpenTab }: {
       }))]);
       if (req.mode === "hint") setHintLevel((h) => Math.min(3, h + 1));
       if (r.replies.some((x) => x.error)) setFailed(req);
+      qc.invalidateQueries({ queryKey: qk.nova(courseId), refetchType: "none" });
     } catch (e) {
       const msg = (e as Error).message === "timeout" ? t("novaTimeout") : `${t("error")}: ${(e as Error).message}`;
       setLines((l) => [...l, { key: `e${Date.now()}`, role: "assistant", agent: "nova", text: msg, citations: [] }]);
@@ -118,14 +127,14 @@ export function NovaPanel({ courseId, refs, request, onOpenTab }: {
   return (
     <aside className="card nova" aria-label="Nova">
       <div className="nova-head">
-        <span className="avatar" aria-hidden="true">N</span>
+        <span className={`nova-orb${busy ? " busy" : ""}`} aria-hidden="true" />
         <div>
-          <strong>Nova</strong>
-          <div className="small muted">Sam · Clara · Alex · Quinn · Sage · Max · Jordan</div>
+          <strong style={{ fontFamily: "var(--display)", fontSize: "1.05rem" }}>Nova</strong>
+          <div className="tiny muted">Sam · Clara · Alex · Quinn · Sage · Max · Jordan</div>
         </div>
       </div>
       <div className="nova-log" ref={logRef} aria-live="polite">
-        <div className="msg msg-bot">{t("novaHello")}{lang === "derja" && <div className="small muted" style={{ marginTop: 6 }}>{t("derjaNote")}</div>}</div>
+        <div className="msg msg-bot" style={{ borderStyle: "dashed" }}>{t("novaHello")}{lang === "derja" && <div className="small muted" style={{ marginTop: 6 }}>{t("derjaNote")}</div>}</div>
         {lines.map((l) => (
           <div key={l.key} className={`msg ${l.role === "user" ? "msg-user" : "msg-bot"}`}>
             {l.role === "assistant" && (
@@ -138,16 +147,24 @@ export function NovaPanel({ courseId, refs, request, onOpenTab }: {
             )}
             <Rich text={l.text} />
             {l.citations?.length > 0 && <div style={{ marginTop: 6 }}><Citations refs={l.citations} map={refs} /></div>}
-            {l.action && <div style={{ marginTop: 6 }}><button className="btn btn-sm" onClick={() => onOpenTab(l.action!.open)}>{t("open")} →</button></div>}
+            {l.action && <div style={{ marginTop: 6 }}><button className="btn btn-sm" onClick={() => onOpenTab(l.action!.open)}>{t("open")} <Icon name="arrow" size={13} /></button></div>}
           </div>
         ))}
+        {lines.length === 0 && !busy && (
+          <div className="stack" style={{ gap: 6 }}>
+            <span className="tiny muted">{t("tryAsk")}</span>
+            <div className="suggest">
+              {SUGGESTIONS[lang].map((sg) => <button key={sg.text} className="chip" onClick={() => { setMode(sg.mode); void send({ message: sg.text, mode: sg.mode }); }}>{sg.text}</button>)}
+            </div>
+          </div>
+        )}
         {busy && <div className="msg msg-bot muted" role="status"><span className="spinner" aria-hidden="true" /> {t("thinking")} {elapsed > 2 ? `${elapsed}s` : ""}{elapsed > 20 ? ` — ${t("slowModel")}` : ""}</div>}
-        {failed && !busy && <div><button className="btn btn-sm" onClick={() => send(failed, true)}>↻ {t("retry")}</button></div>}
+        {failed && !busy && <div><button className="btn btn-sm" onClick={() => send(failed, true)}>{t("retry")}</button></div>}
       </div>
       <form className="nova-foot" onSubmit={submit}>
         <div className="mode-row" role="radiogroup" aria-label="Mode">
           {MODES.map((m) => (
-            <button key={m} type="button" className="chip" role="radio" aria-checked={mode === m} aria-pressed={mode === m} onClick={() => setMode(m)}>
+            <button key={m} type="button" className="chip" role="radio" aria-checked={mode === m} onClick={() => setMode(m)}>
               {t(`mode_${m}` as MessageKey)}{m === "hint" && mode === "hint" ? ` ${hintLevel}/3` : ""}
             </button>
           ))}
@@ -155,7 +172,7 @@ export function NovaPanel({ courseId, refs, request, onOpenTab }: {
         <div className="row" style={{ flexWrap: "nowrap" }}>
           <label htmlFor="nova-input" className="sr-only">{t("askPlaceholder")}</label>
           <input id="nova-input" type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder={t("askPlaceholder")} maxLength={4000} />
-          <button className="btn btn-primary" disabled={busy} type="submit">{t("send")}</button>
+          <button className="btn btn-primary" disabled={busy} type="submit" aria-label={t("send")}><Icon name="arrow" size={16} /></button>
         </div>
       </form>
     </aside>

@@ -19,7 +19,7 @@ export function Notifications() {
           <span>{x.body}</span>
           <div className="row small">
             <span className="muted">{new Date(x.at).toLocaleString()}</span>
-            {x.link && <Link to={x.link.split("?")[0]}>{t("open")}</Link>}
+            {x.link && <Link to={x.link}>{t("open")}</Link>}
             {!x.read && <button className="btn btn-sm" onClick={async () => { await api.post(`/api/notifications/${x.id}/read`); invalidate([...qk.notifications]); }}>✓</button>}
           </div>
         </div>

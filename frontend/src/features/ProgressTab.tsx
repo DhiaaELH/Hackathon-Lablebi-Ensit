@@ -2,6 +2,7 @@ import { useProgress } from "../api/hooks";
 import type { CourseDetail } from "../api/types";
 import { ErrorBox, ProgressBar, Spinner } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
+import { Icon } from "../components/Icon";
 
 export function ProgressTab({ course }: { course: CourseDetail }) {
   const { t } = useI18n();
@@ -11,10 +12,10 @@ export function ProgressTab({ course }: { course: CourseDetail }) {
   const d = p.data;
   return (
     <div className="stack" style={{ gap: "1rem" }}>
-      <div className="alert small">🔒 {t("privateProgress")}</div>
+      <div className="alert small"><Icon name="lock" size={14} /> {t("privateProgress")}</div>
       <section className="card stack">
         <h2>{t("completionCriteria")}</h2>
-        <p className="small muted">{d.criteria}</p>
+        <p className="small muted">{t("criteriaText")}</p>
         {d.chapters.map((c) => (
           <div key={c.chapter_id} className="stack" style={{ gap: 4 }}>
             <div className="row" style={{ justifyContent: "space-between" }}>

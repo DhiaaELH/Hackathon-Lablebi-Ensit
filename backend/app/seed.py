@@ -18,6 +18,15 @@ from .db import Base, SessionLocal, get_engine, init_db
 from .llm import provider as provider_mod
 from .models import (
     Assessment,
+    Conversation,
+    ConversationParticipant,
+    ExamCorrection,
+    ExamCorrectionVote,
+    ExamPaper,
+    Follow,
+    Message,
+    QuestionEndorsement,
+    SharedResource,
     ConfusionSignal,
     Course,
     CourseMember,
@@ -118,7 +127,6 @@ def seed(reset: bool = False) -> None:
                                        dedupe_token=signal_token(uid, s.id), cohort_token=signal_token(uid, course_id),
                                        day=date.today() - timedelta(days=rng.randint(0, 20)), is_demo=True))
                 n_signals += 1
-        chapters = sorted({s.chapter_id for s in sections.values()}, key=lambda c: str(c))
         ch2 = sections["2.1"].chapter_id
         for uid in synthetic[:5]:
             db.add(HardChapterVote(user_id=uid, chapter_id=ch2))
@@ -157,6 +165,42 @@ def seed(reset: bool = False) -> None:
             db.add(GlossaryTerm(course_id=course_id, term_fr=fr, term_ar=ar, term_derja=derja, term_en=en, explanation=expl, review_state="reviewed", contributor_id=youssef))
         db.add(TeacherResponse(course_id=course_id, section_id=sections["2.2"].id, teacher_id=teacher_id, kind="next_session",
                                body="[DÉMO] Nous referons la conversion binaire au tableau en début de prochaine séance."))
+        # --- social / community extras (all synthetic) ---
+        db.add_all([Follow(follower_id=amira, followee_id=youssef), Follow(follower_id=youssef, followee_id=amira)])
+        dm = Conversation(is_group=False, created_by=amira)
+        db.add(dm)
+        db.flush()
+        db.add_all([ConversationParticipant(conversation_id=dm.id, user_id=amira), ConversationParticipant(conversation_id=dm.id, user_id=youssef)])
+        db.add(Message(conversation_id=dm.id, sender_id=amira, body="[DÉMO] Salut Youssef, tu peux m'expliquer le plus long préfixe ?"))
+        db.add(Message(conversation_id=dm.id, sender_id=youssef, body="[DÉMO] Bien sûr ! Le routeur choisit l'entrée la plus spécifique : /16 avant /8."))
+        grp = Conversation(is_group=True, title="[DÉMO] Révision réseaux — L1", course_id=course_id, created_by=youssef, exam_date=date.today() + timedelta(days=12))
+        db.add(grp)
+        db.flush()
+        for uid in (youssef, synthetic[0], synthetic[1]):
+            db.add(ConversationParticipant(conversation_id=grp.id, user_id=uid))
+        db.add(Message(conversation_id=grp.id, sender_id=youssef, body="[DÉMO] On fait une séance sous-réseaux jeudi à 14h ?"))
+        db.add(SharedResource(course_id=course_id, chapter_id=ch2, author_id=youssef, kind="solved_exercise", rights_confirmed=True,
+                              title="[DÉMO] Méthode rapide pour découper un /24",
+                              body="1. Trouver le pas : 256 − dernier octet du masque.\n2. Les sous-réseaux commencent à 0, pas, 2×pas…\n3. Diffusion = début du suivant − 1."))
+        exam = ExamPaper(course_id=course_id, faculty="Faculté des Sciences (démo)", subject="Réseaux informatiques", year=2025, session="principale",
+                         title="[DÉMO] Examen fictif — session principale 2025", uploader_id=youssef, rights_confirmed=True, is_demo=True,
+                         content="Exercice 1 (6 pts) : Découper 172.16.0.0/16 en 8 sous-réseaux. Donner masque, adresses réseau et diffusion.\n"
+                                 "Exercice 2 (4 pts) : Comparer TCP et UDP pour la voix sur IP.",
+                         chapter_tags=[str(ch2), str(sections["3.2"].chapter_id)])
+        db.add(exam)
+        db.add(ExamPaper(course_id=course_id, faculty="Faculté des Sciences (démo)", subject="Réseaux informatiques", year=2024, session="contrôle",
+                         title="[DÉMO] Examen fictif — session de contrôle 2024", uploader_id=amira, rights_confirmed=True, is_demo=True,
+                         content="Exercice 1 : Citer les 7 couches OSI et le PDU de chacune.\nExercice 2 : Combien d'hôtes dans un /27 ?",
+                         chapter_tags=[str(sections["1.1"].chapter_id), str(ch2)]))
+        db.flush()
+        corr = ExamCorrection(exam_id=exam.id, author_id=youssef, body="Ex.1 : 3 bits empruntés → /19, masque 255.255.224.0, pas de 32 sur le 3e octet : 172.16.0.0, 172.16.32.0, …")
+        db.add(corr)
+        db.flush()
+        for uid in synthetic[:3]:
+            db.add(ExamCorrectionVote(user_id=uid, correction_id=corr.id, value=1))
+        for q in qs[:2]:  # synthetic students endorse the first two chapter-2 questions -> "verified by students"
+            for uid in synthetic[:3]:
+                db.add(QuestionEndorsement(user_id=uid, question_id=q.id))
         db.commit()
         print(f"Seeded synthetic course '{course.title}' with {n_signals} anonymous demo signals across {len(synthetic)} synthetic students.")
         print("Demo accounts (password from LF_DEMO_PASSWORD, default 'demo-password-123'):")

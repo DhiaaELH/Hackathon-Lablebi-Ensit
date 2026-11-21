@@ -41,8 +41,8 @@ class VoteIn(BaseModel):
 
 
 class ReportIn(BaseModel):
-    target_type: Literal["thread", "post"]
-    target_id: uuid.UUID
+    target_type: Literal["thread", "post", "resource", "exam", "exam_correction", "question_correction", "user", "message"]
+    target_id: str = Field(min_length=1, max_length=64)
     reason: str = Field(min_length=3, max_length=1000)
 
 

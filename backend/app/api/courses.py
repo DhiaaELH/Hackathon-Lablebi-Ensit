@@ -132,11 +132,62 @@ async def upload(course_id: uuid.UUID, file: UploadFile = File(...), rights_conf
     path = s.storage_dir / f"{rid}.bin"  # private path, original name never used on disk
     path.write_bytes(data)
     ex = extract(kind, data)
+    ex = _maybe_ocr(kind, data, file.content_type or "", ex)
     r = Resource(id=rid, course_id=course.id, owner_id=user.id, kind=kind, filename=name, mime=file.content_type or "", size_bytes=len(data),
                  storage_path=str(path), rights_confirmed=True, page_count=len(ex.pages) or None, extraction_status=ex.status, extraction_notes=ex.notes)
     db.add(r)
     db.flush()
     n = add_chunks(db, course, r, ex.pages) if ex.pages else 0
+    db.commit()
+    return _resource_out(r, n)
+
+
+def _maybe_ocr(kind: str, data: bytes, mime: str, ex):
+    """Scanned PDF pages / photos of notes: transcribe with Gemini when available, otherwise keep the honest note."""
+    if kind not in ("pdf", "image") or ex.status == "ok":
+        return ex
+    from ..services.gemini_media import MediaUnavailable, ocr
+
+    mime = "application/pdf" if kind == "pdf" else (mime if mime.startswith("image/") else "image/png")
+    try:
+        pages = ocr(data, mime)
+    except MediaUnavailable as e:
+        ex.notes.append(str(e))
+        return ex
+    have = {p.number for p in ex.pages}
+    added = [p for p in pages if p.number not in have]
+    if added:
+        ex.pages = sorted(ex.pages + added, key=lambda p: p.number or 0)
+        ex.status = "partial"
+        ex.notes = [n for n in ex.notes if "OCR" not in n and "scanned" not in n] + [f"{len(added)} page(s) transcribed by OCR (Gemini) - check them for errors."]
+    return ex
+
+
+class YoutubeIn(BaseModel):
+    url: str = Field(min_length=10, max_length=300)
+    rights_confirmed: bool
+
+
+@router.post("/courses/{course_id}/resources/youtube", dependencies=[Depends(rate_limit("upload", 20, 600))])
+def add_youtube(course_id: uuid.UUID, body: YoutubeIn, user=Depends(current_user), db: Session = Depends(get_db)):
+    import re
+
+    from ..services.gemini_media import MediaUnavailable, youtube_transcript
+
+    course = get_owned_course(db, user, course_id)
+    if not body.rights_confirmed:
+        raise HTTPException(400, "Please confirm you have the right to use this material")
+    if not re.match(r"^https://(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[\w-]{6,}", body.url):
+        raise HTTPException(400, "Paste a YouTube video link (https://www.youtube.com/watch?v=...)")
+    try:
+        pages = youtube_transcript(body.url)
+    except MediaUnavailable as e:
+        raise HTTPException(422, str(e))
+    r = Resource(course_id=course.id, owner_id=user.id, kind="video", filename=body.url, mime="video/youtube", size_bytes=0,
+                 rights_confirmed=True, extraction_status="partial", extraction_notes=["Content transcribed from the video by Gemini; timestamps refer to the video."])
+    db.add(r)
+    db.flush()
+    n = add_chunks(db, course, r, pages)
     db.commit()
     return _resource_out(r, n)
 

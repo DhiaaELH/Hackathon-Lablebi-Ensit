@@ -10,12 +10,16 @@ import { Library } from "./pages/Library";
 import { Notifications } from "./pages/Notifications";
 import { Settings } from "./pages/Settings";
 import { TeacherInsights } from "./pages/TeacherInsights";
+import { Messages } from "./pages/Messages";
+import { Moderation } from "./pages/Moderation";
+import { People, ProfilePage } from "./pages/People";
+import { Queue } from "./pages/Queue";
 
-function Protected({ children, teacher }: { children: JSX.Element; teacher?: boolean }) {
+function Protected({ children, roles }: { children: JSX.Element; roles?: string[] }) {
   const me = useMe();
   if (me.isLoading) return <div className="page"><Spinner /></div>;
   if (!me.data) return <Navigate to="/login" replace />;
-  if (teacher && !["teacher", "admin"].includes(me.data.role)) return <Navigate to="/" replace />;
+  if (roles && !roles.includes(me.data.role)) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -28,7 +32,13 @@ export function App() {
         <Route path="/library" element={<Library />} />
         <Route path="/courses/:id" element={<CoursePage />} />
         <Route path="/courses/:id/setup" element={<CourseSetup />} />
-        <Route path="/insights" element={<Protected teacher><TeacherInsights /></Protected>} />
+        <Route path="/insights" element={<Protected roles={["teacher", "admin"]}><TeacherInsights /></Protected>} />
+        <Route path="/queue" element={<Protected roles={["senior", "teacher", "admin"]}><Queue /></Protected>} />
+        <Route path="/moderation" element={<Protected roles={["admin"]}><Moderation /></Protected>} />
+        <Route path="/people" element={<People />} />
+        <Route path="/u/:username" element={<ProfilePage />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/messages/:id" element={<Messages />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
       </Route>

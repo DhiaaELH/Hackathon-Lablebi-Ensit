@@ -1,23 +1,25 @@
 # Implementation status
 
-## Implemented and tested (Phase 1 + core of Phase 2)
-- Auth: register/login/logout (bcrypt, JWT in httpOnly SameSite cookie), CSRF header, rate limits, generic login errors + timing equalisation, teacher invite code, profile/preferences, data export, account deletion.
-- Courses: create (private by default), paste text, upload PDF/PPTX/TXT/MD/PNG/JPG with size, extension and magic-byte checks, private storage path, rights confirmation, scanned-page detection, opt-in publish with an exact "what becomes visible" preview, library search, enroll.
-- RAG: page-aware chunking, hybrid FTS + pgvector + RRF, access-scoped.
-- Agents/workflow: Jordan DAG (Clara → Quinn/Alex/Sage/Max in parallel → Riley), persisted tasks/events/envelopes, bounded retries, failure states; cycle-safe prerequisite graph; topic map.
-- Learning: structured course with citations, exercises, chapter quizzes, mock exam (answer key hidden until submission), scoring, misconception feedback, prerequisite-gap diagnosis with evidence, mini-lesson, Socratic/hint 1-3/answer/alternate/explain-my-mistake tutor, revision summaries, flashcards, PDF sheet, progress and concept trends, chapter completion criteria, applied projects (locked until completion; save/start/complete/dismiss).
-- Community: chapter threads, replies, upvotes, accepted answer, tutor/teacher badges, "this chapter is hard" (1 per student), reports.
-- Class insights: anonymous signals with reason chips, N≥5 suppression on heatmap/reasons/trend/hard votes/most-missed questions, teacher responses, opt-in notifications.
-- i18n: FR/EN/MSA/Derja UI with RTL; target language passed to every role; Derja Arabic or Arabizi script setting.
+## Implemented and tested
+**Learn:** auth (cookie JWT, CSRF header, rate limits, teacher invite code, export, deletion) · course upload (PDF/PPTX/TXT/MD/images, magic-byte checks, private storage) · **OCR of scanned PDFs/photos via Gemini** · **YouTube ingestion via Gemini** · hybrid RAG (Postgres FTS + pgvector + RRF, access-scoped) · Jordan workflow (Clara → Quinn/Alex/Sage/Max in parallel → Riley) with retries · structured course with citations · exercises, quizzes, mock exam (key hidden until submission) · misconception feedback · prerequisite-gap diagnosis + mini-lesson · tutor modes (Socratic, hints 1-3, answer, alternate, explain-my-mistake) · revision summaries, flashcards, PDF · **spaced repetition (SM-2)** · **audio summaries (browser speech)** · **revision planner** · **offline study pack** · interactive topic map · progress · applied projects.
 
-## Not verified here
-- No real Claude call was made in development (no API key in this environment). The request shape is covered by tests with a fake client; run once with a key and check `/api/system/llm-stats`.
-- The UI was type-checked, built and smoke-tested over HTTP but not visually reviewed in a browser.
+**Community:** chapter threads, votes, accepted answers, hard-chapter votes · **shared student resources + helpful ratings** · **multilingual glossary (FR/AR/Derja/EN) with tutor review, used by Riley** · **exam archive (faculty/subject/year/session) with corrections, voting and chapter-frequency counts** · **"verified by students" on AI questions (endorsements + accepted corrections, shown as community, not expert, verification)** · **study groups with chat and exam countdown** · **peer-tutor badge** · reports + **moderation console**.
 
-## Deferred (schema already present, API/UI not built)
-- Social: public user search, follow/unfollow, DMs, block (tables `follows`, `blocks`, `conversations`, `messages`).
-- Recommendations panel (tables `recommendations`, `recommendation_feedback`) — planned as a transparent content-based ranker.
-- Shared student resources + ratings, glossary UI (terms are seeded and stored), exam archive + corrections, "verified by students" flow, senior-student de-identified queue, moderation console.
-- Resource Finder: honest "not configured" state only; no search adapter yet.
-- OCR requires `pytesseract` + the tesseract binary; YouTube ingestion, study groups, spaced repetition, audio summaries.
-- Row-level security: authorization is enforced in the API layer (`app/security.py`); Postgres RLS policies are not configured yet.
+**Class insights:** anonymous signals (HMAC dedupe, no user FK, day only), N≥5 suppression on every aggregate, teacher responses, opt-in notifications, hint counter by section · **senior-student de-identified queue** (≥5 students, no teacher response for 24 h).
+
+**Social:** **opt-in user search, public profiles, follow/unfollow, private DMs with pagination, message privacy (everyone/followers/nobody), block (both directions), report**.
+
+**Recommendations:** **transparent rule-based ranker** (weak concepts from your own quiz results, next unfinished section, interest overlap with published courses) with a reason on every item, save/dismiss/tune.
+
+**Resource Finder:** Gemini + Google Search grounding; only links returned by the search tool are shown, each fetched and checked (public host, HTTP < 400). Needs a Gemini plan that includes search; otherwise an honest "unavailable" state.
+
+## Verified
+- 29 backend tests (pytest, real PostgreSQL 16 + pgvector) — privacy rules, thresholds, SRS, verification, moderation, etc.
+- Frontend: TypeScript strict typecheck + production build; headless-Chromium walkthrough of all main screens (FR + AR/RTL) with zero runtime errors.
+- Live Gemini: course generation, tutor, PDF OCR and YouTube reading were exercised with a real key. Search grounding returned "quota exceeded" on the free plan.
+
+## Still not done
+- Row-level security in Postgres (authorization is enforced in the API layer).
+- Realtime push (chat and notifications poll every 5-30 s).
+- Email notifications (in-app only).
+- Recommendations are rules, not a trained model (by design for v1).

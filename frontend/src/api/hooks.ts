@@ -8,6 +8,7 @@ import { api } from "./client";
 import type {
   AssessmentCard, AssessmentDetail, CourseCard, CourseDetail, Health, Insights, Me, NotificationT, NovaHistoryItem,
   Progress, Projects, Revision, TeacherResponseT, ThreadCard, ThreadDetail, WorkflowStatus,
+  ConversationT, DueCards, ExamList, ExamT, GlossaryTermT, GroupT, MessagesPage, PublicProfile, QueueItem, Recs, ReportT, SharedT,
 } from "./types";
 
 const MIN = 60_000;
@@ -31,6 +32,19 @@ export const qk = {
   responses: (id: string) => ["responses", id] as const,
   notifications: ["notifications"] as const,
   llmStats: ["llmStats"] as const,
+  people: (q: string) => ["people", q] as const,
+  profile: (u: string) => ["profile", u] as const,
+  conversations: ["conversations"] as const,
+  messages: (id: string) => ["messages", id] as const,
+  groups: (courseId: string) => ["groups", courseId] as const,
+  recs: ["recs"] as const,
+  glossary: (courseId: string, q: string) => ["glossary", courseId, q] as const,
+  shared: (chapterId: string) => ["shared", chapterId] as const,
+  exams: (courseId: string, year: string) => ["exams", courseId, year] as const,
+  exam: (id: string) => ["exam", id] as const,
+  due: (courseId: string) => ["due", courseId] as const,
+  queue: ["queue"] as const,
+  reports: ["reports"] as const,
 };
 
 export const useMe = () =>
@@ -71,9 +85,29 @@ export const useTeacherResponses = (courseId: string) =>
 export const useNotifications = (enabled: boolean) =>
   useQuery({ queryKey: qk.notifications, queryFn: () => api.get<NotificationT[]>("/api/notifications"), enabled, refetchInterval: enabled ? 30_000 : false });
 
+export const usePeople = (q: string) =>
+  useQuery({ queryKey: qk.people(q), queryFn: () => api.get<PublicProfile[]>(`/api/users/search?q=${encodeURIComponent(q)}`), enabled: q.trim().length >= 2 });
+export const useConversations = () =>
+  useQuery({ queryKey: qk.conversations, queryFn: () => api.get<ConversationT[]>("/api/conversations"), refetchInterval: 15_000 });
+export const useMessages = (id: string | null) =>
+  useQuery({ queryKey: qk.messages(id ?? ""), queryFn: () => api.get<MessagesPage>(`/api/conversations/${id}/messages`), enabled: !!id, refetchInterval: id ? 5000 : false });
+export const useGroups = (courseId: string) => useQuery({ queryKey: qk.groups(courseId), queryFn: () => api.get<GroupT[]>(`/api/courses/${courseId}/groups`) });
+export const useRecs = () => useQuery({ queryKey: qk.recs, queryFn: () => api.get<Recs>("/api/recommendations") });
+export const useGlossary = (courseId: string, q: string) =>
+  useQuery({ queryKey: qk.glossary(courseId, q), queryFn: () => api.get<GlossaryTermT[]>(`/api/courses/${courseId}/glossary?q=${encodeURIComponent(q)}`) });
+export const useShared = (chapterId: string | null) =>
+  useQuery({ queryKey: qk.shared(chapterId ?? ""), queryFn: () => api.get<SharedT[]>(`/api/chapters/${chapterId}/shared`), enabled: !!chapterId });
+export const useExams = (courseId: string, year: string) =>
+  useQuery({ queryKey: qk.exams(courseId, year), queryFn: () => api.get<ExamList>(`/api/courses/${courseId}/exams${year ? `?year=${year}` : ""}`) });
+export const useExam = (id: string | null) => useQuery({ queryKey: qk.exam(id ?? ""), queryFn: () => api.get<ExamT>(`/api/exams/${id}`), enabled: !!id });
+export const useDue = (courseId: string) => useQuery({ queryKey: qk.due(courseId), queryFn: () => api.get<DueCards>(`/api/courses/${courseId}/flashcards/due`) });
+export const useQueue = (enabled: boolean) =>
+  useQuery({ queryKey: qk.queue, queryFn: () => api.get<{ items: QueueItem[]; min_cohort: number }>("/api/senior/queue"), enabled });
+export const useReports = () => useQuery({ queryKey: qk.reports, queryFn: () => api.get<ReportT[]>("/api/admin/reports") });
+
 export function useInvalidate() {
   const qc = useQueryClient();
   return (...keys: readonly unknown[][]) => Promise.all(keys.map((k) => qc.invalidateQueries({ queryKey: k })));
 }
 
-export { useMutation, useQueryClient };
+export { useMutation, useQuery, useQueryClient };

@@ -53,6 +53,8 @@ class PrefsIn(BaseModel):
     display_name: str | None = Field(default=None, max_length=80)
     searchable: bool | None = None
     message_setting: Literal["everyone", "followers", "nobody"] | None = None
+    bio: str | None = Field(default=None, max_length=300)
+    show_follows: bool | None = None
     faculty: str | None = Field(default=None, max_length=120)
     interests: list[str] | None = None
     current_subjects: list[str] | None = None
@@ -64,7 +66,7 @@ def me_payload(db: Session, user: User) -> dict:
     return {"id": str(user.id), "email": user.email, "role": p.role, "username": p.username, "display_name": p.display_name,
             "locale": p.locale, "derja_script": p.derja_script, "searchable": p.searchable, "message_setting": p.message_setting,
             "faculty": prefs.faculty if prefs else None, "interests": prefs.interests if prefs else [],
-            "current_subjects": prefs.current_subjects if prefs else [], "is_demo": p.is_demo}
+            "current_subjects": prefs.current_subjects if prefs else [], "is_demo": p.is_demo, "bio": p.bio, "show_follows": p.show_follows}
 
 
 def _set_cookie(resp: Response, user: User) -> None:
@@ -118,7 +120,7 @@ def me(user: User = Depends(current_user), db: Session = Depends(get_db)):
 @router.patch("/me")
 def update_me(body: PrefsIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
     p = user.profile
-    for f in ("locale", "derja_script", "searchable", "message_setting"):
+    for f in ("locale", "derja_script", "searchable", "message_setting", "bio", "show_follows"):
         v = getattr(body, f)
         if v is not None:
             setattr(p, f, v)

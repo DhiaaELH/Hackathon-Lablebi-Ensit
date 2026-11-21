@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { qk, useCourse, useInvalidate, useWorkflow } from "../api/hooks";
 import type { ResourceT } from "../api/types";
+import { Icon } from "../components/Icon";
 import { AGENT_INITIAL, AGENT_NAME, ErrorBox, Spinner, Tabs } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 
@@ -52,7 +53,9 @@ export function CourseSetup() {
   const course = useCourse(id);
   const invalidate = useInvalidate();
   const nav = useNavigate();
-  const [tab, setTab] = useState<"paste" | "upload">("paste");
+  const [tab, setTab] = useState<"paste" | "upload" | "youtube">("paste");
+  const [yt, setYt] = useState("");
+  const [drag, setDrag] = useState(false);
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [rights, setRights] = useState(false);
@@ -69,6 +72,9 @@ export function CourseSetup() {
       if (tab === "paste") {
         r = await api.post<ResourceT>(`/api/courses/${id}/resources/text`, { title: "Texte collé", text, rights_confirmed: rights });
         setText("");
+      } else if (tab === "youtube") {
+        r = await api.post<ResourceT>(`/api/courses/${id}/resources/youtube`, { url: yt, rights_confirmed: rights }, 120_000);
+        setYt("");
       } else {
         if (!file) return;
         const fd = new FormData();
@@ -101,27 +107,40 @@ export function CourseSetup() {
 
   return (
     <div className="stack" style={{ maxWidth: 820, gap: "1rem" }}>
-      <Link to="/" className="small">← {t("myCourses")}</Link>
+      <Link to="/" className="small"><Icon name="back" size={13} /> {t("myCourses")}</Link>
       <h1>{course.data?.title ?? "…"}</h1>
       <div className="card stack">
         <h2>{t("addMaterial")}</h2>
         <div className="alert alert-warning small">{t("copyright")}</div>
-        <Tabs tabs={[{ id: "paste", label: t("pasteText") }, { id: "upload", label: t("uploadFile") }]} value={tab} onChange={setTab} />
-        {tab === "paste" ? (
+        <Tabs tabs={[{ id: "paste", label: t("pasteText"), icon: "file" }, { id: "upload", label: t("uploadFile"), icon: "download" }, { id: "youtube", label: t("youtube"), icon: "video" }]} value={tab} onChange={setTab} />
+        {tab === "paste" && (
           <div className="field">
             <label htmlFor="paste">{t("pasteText")}</label>
-            <textarea id="paste" value={text} onChange={(e) => setText(e.target.value)} placeholder="# Chapitre 1 : …" />
+            <textarea id="paste" value={text} onChange={(e) => setText(e.target.value)} placeholder={"# Chapitre 1 : …\n## 1.1 …\nTerme : définition\nFormule : $a^2 + b^2 = c^2$"} style={{ minHeight: 220, fontFamily: "var(--mono)", fontSize: "0.88rem" }} />
+            <span className="tiny muted">{text.length.toLocaleString()} caractères</span>
           </div>
-        ) : (
-          <div className="field">
-            <label htmlFor="file">{t("uploadFile")}</label>
-            <input id="file" type="file" accept=".pdf,.pptx,.txt,.md,.png,.jpg,.jpeg" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        )}
+        {tab === "upload" && (
+          <label htmlFor="file" className="stack" style={{ alignItems: "center", textAlign: "center", padding: "2rem 1rem", border: `1.5px dashed ${drag ? "var(--primary)" : "var(--line-strong)"}`,
+            borderRadius: 12, background: drag ? "var(--primary-soft)" : "var(--paper)", cursor: "pointer", transition: "all .15s" }}
+            onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
+            onDrop={(e) => { e.preventDefault(); setDrag(false); setFile(e.dataTransfer.files?.[0] ?? null); }}>
+            <Icon name="download" size={28} />
+            <strong>{file ? file.name : t("uploadFile")}</strong>
             <span className="small muted">{t("fileRules")}</span>
+            <input id="file" type="file" className="sr-only" accept=".pdf,.pptx,.txt,.md,.png,.jpg,.jpeg" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          </label>
+        )}
+        {tab === "youtube" && (
+          <div className="field">
+            <label htmlFor="yt">{t("youtube")}</label>
+            <input id="yt" type="url" value={yt} onChange={(e) => setYt(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" />
+            <span className="tiny muted">Gemini lit la vidéo et en extrait le contenu avec des horodatages. Échoue proprement si la vidéo n'est pas accessible.</span>
           </div>
         )}
         <label className="check"><input type="checkbox" checked={rights} onChange={(e) => setRights(e.target.checked)} /> {t("rightsConfirm")}</label>
         <div className="row">
-          <button className="btn" disabled={busy || !rights || (tab === "paste" ? text.trim().length < 50 : !file)} onClick={add}>{t("addMaterial")}</button>
+          <button className="btn btn-primary" disabled={busy || !rights || (tab === "paste" ? text.trim().length < 50 : tab === "youtube" ? yt.length < 15 : !file)} onClick={add}><Icon name="plus" size={14} /> {t("addMaterial")}</button>
           {busy && <Spinner />}
         </div>
         {err != null && <ErrorBox error={err} />}
@@ -141,7 +160,7 @@ export function CourseSetup() {
         <p className="small muted" style={{ margin: 0 }}>{t("privateByDefault")}</p>
       </div>
       <div className="row">
-        <button className="btn btn-primary" disabled={!resources.some((r) => r.status !== "failed") || !!wfId} onClick={generate}>{t("generate")}</button>
+        <button className="btn btn-accent" disabled={!resources.some((r) => r.status !== "failed") || !!wfId} onClick={generate}><Icon name="wand" size={15} /> {t("generate")}</button>
       </div>
       {wfId && <WorkflowProgress workflowId={wfId} onDone={() => { invalidate([...qk.course(id)], [...qk.courses]); setTimeout(() => nav(`/courses/${id}`), 900); }} />}
     </div>

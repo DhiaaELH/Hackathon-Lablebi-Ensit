@@ -4,6 +4,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { ApiError } from "./api/client";
 import { App } from "./App";
+import { ToastProvider } from "./components/Toast";
 import { I18nProvider } from "./i18n/I18n";
 import "./styles.css";
 
@@ -22,9 +23,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ToastProvider>
       </I18nProvider>
     </QueryClientProvider>
   </React.StrictMode>,

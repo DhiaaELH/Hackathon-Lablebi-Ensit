@@ -4,6 +4,7 @@ import { qk, useCourses, useInsights, useInvalidate } from "../api/hooks";
 import { Empty, ErrorBox, Spinner } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 import type { MessageKey } from "../i18n/messages";
+import { Icon } from "../components/Icon";
 
 const REASONS = ["vocabulary", "missing_prerequisite", "too_fast", "need_example", "exercise_too_hard"];
 
@@ -54,7 +55,7 @@ export function TeacherInsights() {
       {ins.error && <ErrorBox error={ins.error} />}
       {d && (
         <>
-          <div className="alert small">🔒 {d.privacy_note}</div>
+          <div className="alert small"><Icon name="lock" size={14} /> {d.privacy_note}</div>
           <section className="card stack">
             <h2>{t("heatmap")}</h2>
             <div className="table-wrap">

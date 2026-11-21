@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import type { RefT } from "../api/types";
 import { useI18n } from "../i18n/I18n";
 import type { MessageKey } from "../i18n/messages";
+import { Icon } from "./Icon";
 
 export function Spinner({ label }: { label?: string }) {
   const { t } = useI18n();
@@ -72,12 +73,21 @@ export function ProgressBar({ value, label }: { value: number; label: string }) 
   );
 }
 
-export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: string; icon?: string }[]; value: T; onChange: (v: T) => void }) {
+  function onKey(e: React.KeyboardEvent, i: number) {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const rtl = document.documentElement.dir === "rtl";
+    const step = (e.key === "ArrowRight") !== rtl ? 1 : -1;
+    const next = tabs[(i + step + tabs.length) % tabs.length];
+    onChange(next.id);
+    (e.currentTarget.parentElement?.children[(i + step + tabs.length) % tabs.length] as HTMLElement | undefined)?.focus();
+  }
   return (
     <div className="tabs" role="tablist">
-      {tabs.map((tb) => (
-        <button key={tb.id} role="tab" type="button" className="tab" aria-selected={value === tb.id} onClick={() => onChange(tb.id)}>
-          {tb.label}
+      {tabs.map((tb, i) => (
+        <button key={tb.id} role="tab" type="button" className="tab" aria-selected={value === tb.id} tabIndex={value === tb.id ? 0 : -1}
+          onClick={() => onChange(tb.id)} onKeyDown={(e) => onKey(e, i)}>
+          {tb.icon && <Icon name={tb.icon} size={16} />} {tb.label}
         </button>
       ))}
     </div>
