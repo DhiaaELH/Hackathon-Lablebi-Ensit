@@ -228,4 +228,13 @@ export interface Suggestion extends PublicProfile { reason: string; reasons: { c
 
 export interface MemberT { username: string; display_name: string; role: Role; member_role: "student" | "teacher" }
 export interface AdminUser { username: string; display_name: string; email: string; role: Role; is_demo: boolean; courses: number; created_at: string }
+export interface LlmCostModel {
+  provider: string; model: string; calls: number; input_tokens: number; output_tokens: number; cache_read_tokens: number; cache_write_tokens: number;
+  cost_usd: number | null; price: { input: number; output: number; cache_read: number; cache_write: number } | null;
+}
+export interface LlmCost {
+  currency: "USD"; prices_as_of: string; since: string | null; calls: number; unpriced_models: string[];
+  totals: { all: number; month: number; last_30d: number; today: number };
+  by_model: LlmCostModel[]; daily: { day: string; cost_usd: number }[];
+}
 export interface AdminStats { users: Record<Role, number>; courses: number; published: number; attempts: number; open_reports: number }

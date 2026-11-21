@@ -8,7 +8,7 @@ import { api } from "./client";
 import type {
   AssessmentCard, AssessmentDetail, CourseCard, CourseDetail, Health, Insights, Me, NotificationT, NovaHistoryItem,
   Progress, Projects, Revision, TeacherResponseT, ThreadCard, ThreadDetail, WorkflowStatus,
-  AdminStats, AdminUser, MemberT,
+  AdminStats, AdminUser, LlmCost, MemberT,
   ConversationT, DueCards, Suggestion, ExamList, ExamT, GlossaryTermT, GroupT, MessagesPage, PublicProfile, QueueItem, Recs, ReportT, SharedT,
 } from "./types";
 
@@ -33,6 +33,7 @@ export const qk = {
   responses: (id: string) => ["responses", id] as const,
   notifications: ["notifications"] as const,
   llmStats: ["llmStats"] as const,
+  llmCost: ["llmCost"] as const,
   people: (q: string) => ["people", q] as const,
   profile: (u: string) => ["profile", u] as const,
   conversations: ["conversations"] as const,
@@ -116,6 +117,8 @@ export const useMembers = (courseId: string) =>
   useQuery({ queryKey: qk.members(courseId), queryFn: () => api.get<MemberT[]>(`/api/courses/${courseId}/members`) });
 export const useAdminUsers = (q: string, role: string) =>
   useQuery({ queryKey: qk.adminUsers(q, role), queryFn: () => api.get<AdminUser[]>(`/api/admin/users?q=${encodeURIComponent(q)}&role=${role}`) });
+export const useLlmCost = (enabled: boolean) =>
+  useQuery({ queryKey: qk.llmCost, queryFn: () => api.get<LlmCost>("/api/system/llm-cost"), enabled, staleTime: MIN });
 export const useAdminStats = () => useQuery({ queryKey: qk.adminStats, queryFn: () => api.get<AdminStats>("/api/admin/stats") });
 
 export function useInvalidate() {

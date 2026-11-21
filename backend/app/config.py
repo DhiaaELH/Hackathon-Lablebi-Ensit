@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     llm_fast: str | None = None  # interactive: Sam (tutor) via Nova
     llm_smart: str | None = None  # background generation: Clara, Quinn, Alex, Sage, Max, Riley
     llm_timeout_s: float = 180.0
+    llm_prices: str | None = None  # JSON price overrides per model (USD / 1M tokens), see app/llm/pricing.py
     corpus_max_tokens: int = 150_000
 
     embeddings_provider: str = "hash"

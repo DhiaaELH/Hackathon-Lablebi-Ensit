@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
-import { qk, useMe, useQueryClient } from "../api/hooks";
-import type { Lang, Me } from "../api/types";
+import { qk, useLlmCost, useMe, useQueryClient } from "../api/hooks";
+import type { Lang, LlmCost, Me } from "../api/types";
 import { Icon } from "../components/Icon";
 import { useToast } from "../components/Toast";
 import { Spinner } from "../components/ui";
@@ -82,10 +82,61 @@ export function Settings() {
           </select>
         </div>
       </section>
+      {m.role === "admin" && <ApiCost />}
       <section className="card row">
         <button className="btn" onClick={exportData}><Icon name="download" size={15} /> {t("exportData")}</button>
         <button className="btn btn-danger" onClick={del}>{t("deleteAccount")}</button>
       </section>
     </div>
+  );
+}
+
+const usd = (v: number) => `$${v < 1 ? v.toFixed(v === 0 ? 2 : 3) : v.toFixed(2)}`;
+const tok = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)} M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)} k` : String(n));
+
+/** Admin only: estimated AI API spend from logged token counts (GET /api/system/llm-cost). */
+function ApiCost() {
+  const { t, lang } = useI18n();
+  const q = useLlmCost(true);
+  const d: LlmCost | undefined = q.data;
+  const locale = lang === "en" ? "en-GB" : lang === "fr" ? "fr-FR" : "ar-TN";
+  return (
+    <section className="card stack">
+      <h2>{t("apiCost")}</h2>
+      {q.isLoading && <Spinner />}
+      {q.isError && <div className="alert alert-error">{String((q.error as Error)?.message ?? q.error)}</div>}
+      {d && (
+        <>
+          <p className="small muted" style={{ margin: 0 }}>{t("apiCostIntro").replace("{date}", d.prices_as_of)}</p>
+          {d.calls === 0 ? <div className="empty">{t("costEmpty")}</div> : (
+            <>
+              <div className="stat-grid">
+                <div className="stat"><strong>{usd(d.totals.today)}</strong><span className="small muted">{t("costToday")}</span></div>
+                <div className="stat"><strong>{usd(d.totals.month)}</strong><span className="small muted">{t("costMonth")}</span></div>
+                <div className="stat"><strong>{usd(d.totals.last_30d)}</strong><span className="small muted">{t("cost30d")}</span></div>
+                <div className="stat"><strong>{usd(d.totals.all)}</strong><span className="small muted">{t("costAll")}</span></div>
+              </div>
+              {d.since && <span className="small muted">{t("costCalls").replace("{n}", String(d.calls)).replace("{date}", new Date(d.since).toLocaleDateString(locale))}</span>}
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th>{t("costModel")}</th><th>{t("costCallsCol")}</th><th>{t("costIn")}</th><th>{t("costOut")}</th><th>{t("costCached")}</th><th>{t("costCol")}</th></tr></thead>
+                  <tbody>
+                    {d.by_model.map((r) => (
+                      <tr key={r.model}>
+                        <td><strong>{r.model}</strong>
+                          {r.price && <div className="tiny muted">{r.price.input} · {r.price.output} {t("costPerM")}</div>}</td>
+                        <td>{r.calls}</td><td>{tok(r.input_tokens)}</td><td>{tok(r.output_tokens)}</td><td>{tok(r.cache_read_tokens + r.cache_write_tokens)}</td>
+                        <td><strong>{r.cost_usd === null ? "—" : usd(r.cost_usd)}</strong></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {d.unpriced_models.length > 0 && <div className="alert alert-warning">{t("costUnpriced").replace("{models}", d.unpriced_models.join(", "))}</div>}
+            </>
+          )}
+        </>
+      )}
+    </section>
   );
 }

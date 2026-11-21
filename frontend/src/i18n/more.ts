@@ -23,6 +23,10 @@ export const MORE_FR = {
   role_student: "Étudiant", role_senior: "Tuteur pair", role_teacher: "Enseignant", role_admin: "Admin",
   roleHint_student: "Apprends, pratique et révise tes cours.", roleHint_senior: "Aide les autres : file tuteurs, glossaire, réponses acceptées, discussions épinglées.",
   roleHint_teacher: "Gère tes classes, suis les difficultés et réponds aux élèves.", roleHint_admin: "Gère les comptes, les rôles et la modération.",
+  apiCost: "Coût de l'API IA", apiCostIntro: "Estimation : jetons enregistrés × tarifs publics ({date}, USD). Hors embeddings et stockage du cache.",
+  costToday: "Aujourd'hui", costMonth: "Ce mois-ci", cost30d: "30 derniers jours", costAll: "Depuis le début", costCalls: "{n} appels depuis le {date}",
+  costModel: "Modèle", costCallsCol: "Appels", costIn: "Entrée", costOut: "Sortie", costCached: "En cache", costCol: "Coût",
+  costUnpriced: "Pas de tarif pour : {models} (ajoute-le via LLM_PRICES).", costEmpty: "Aucun appel à l'IA enregistré pour l'instant.", costPerM: "$ / 1M jetons (entrée · sortie)",
 };
 
 export const MORE_EN: typeof MORE_FR = {
@@ -49,6 +53,10 @@ export const MORE_EN: typeof MORE_FR = {
   role_student: "Student", role_senior: "Peer tutor", role_teacher: "Teacher", role_admin: "Admin",
   roleHint_student: "Learn, practise and revise your courses.", roleHint_senior: "Help others: tutor queue, glossary review, accepted answers, pinned discussions.",
   roleHint_teacher: "Manage your classes, follow difficulties and answer students.", roleHint_admin: "Manage accounts, roles and moderation.",
+  apiCost: "AI API cost", apiCostIntro: "Estimate: logged tokens × public list prices ({date}, USD). Excludes embeddings and cache storage.",
+  costToday: "Today", costMonth: "This month", cost30d: "Last 30 days", costAll: "All time", costCalls: "{n} calls since {date}",
+  costModel: "Model", costCallsCol: "Calls", costIn: "Input", costOut: "Output", costCached: "Cached", costCol: "Cost",
+  costUnpriced: "No price for: {models} (add it with LLM_PRICES).", costEmpty: "No AI calls logged yet.", costPerM: "$ / 1M tokens (input · output)",
 };
 
 export const MORE_AR: typeof MORE_FR = {
@@ -75,4 +83,8 @@ export const MORE_AR: typeof MORE_FR = {
   role_student: "طالب", role_senior: "طالب مرشد", role_teacher: "أستاذ", role_admin: "مشرف",
   roleHint_student: "تعلّم وتدرّب وراجع دروسك.", roleHint_senior: "ساعد الآخرين: قائمة المرشدين، مراجعة المصطلحات، قبول الإجابات، تثبيت النقاشات.",
   roleHint_teacher: "أدر أقسامك، تابع الصعوبات وأجب التلاميذ.", roleHint_admin: "أدر الحسابات والأدوار والإشراف.",
+  apiCost: "تكلفة واجهة الذكاء الاصطناعي", apiCostIntro: "تقدير: الرموز المسجّلة × الأسعار المعلنة ({date}، بالدولار). لا تشمل التضمينات وتخزين الذاكرة المؤقتة.",
+  costToday: "اليوم", costMonth: "هذا الشهر", cost30d: "آخر 30 يومًا", costAll: "منذ البداية", costCalls: "{n} طلبًا منذ {date}",
+  costModel: "النموذج", costCallsCol: "الطلبات", costIn: "الإدخال", costOut: "الإخراج", costCached: "مخزّن مؤقتًا", costCol: "التكلفة",
+  costUnpriced: "لا يوجد سعر لـ: {models} (أضفه عبر LLM_PRICES).", costEmpty: "لا توجد طلبات ذكاء اصطناعي مسجّلة بعد.", costPerM: "$ / مليون رمز (إدخال · إخراج)",
 };
