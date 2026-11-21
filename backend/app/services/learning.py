@@ -22,7 +22,7 @@ PASS_RATIO = 0.6
 
 
 def score_attempt(db: Session, user_id: uuid.UUID, assessment: Assessment, answers: dict[str, int]) -> Attempt:
-    questions = db.scalars(select(Question).where(Question.assessment_id == assessment.id).order_by(Question.ordinal)).all()
+    questions = db.scalars(select(Question).where(Question.assessment_id == assessment.id, Question.qtype == "mcq").order_by(Question.ordinal)).all()
     per_q, score, max_score = [], 0.0, 0.0
     tally: dict[uuid.UUID, list[int]] = {}
     for q in questions:

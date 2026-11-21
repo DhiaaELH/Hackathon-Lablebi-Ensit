@@ -20,7 +20,7 @@ cd frontend && npm install && npm run dev   # http://localhost:5173 (proxies /ap
 Database options: with `DATABASE_URL` unset, the backend starts an **embedded PostgreSQL 16 + pgvector** (`pgserver` package, data in `backend/.pgdata`). For a regular server: `docker compose up -d db` and set
 `DATABASE_URL=postgresql+psycopg://lessonforge:lessonforge@localhost:5432/lessonforge`.
 
-**Checks:** `cd backend && .venv/bin/python -m pytest -q` (23 tests) · `cd frontend && npm run typecheck && npm run build`.
+**Checks:** `cd backend && .venv/bin/python -m pytest -q` (33 tests) · `cd frontend && npm run typecheck && npm run build`.
 
 ### Demo accounts (local only, synthetic)
 Password for all: `demo-password-123` (override with `LF_DEMO_PASSWORD` before seeding).

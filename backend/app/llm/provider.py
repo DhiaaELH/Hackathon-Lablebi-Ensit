@@ -18,6 +18,8 @@ Every call is logged to `llm_calls` with cache read/write token counts (`GET /ap
 import hashlib
 import json
 import logging
+import re
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import TypeVar
@@ -40,6 +42,10 @@ class LLMError(RuntimeError):
 
 class TransientLLMError(LLMError):
     transient = True
+
+    def __init__(self, message: str, retry_after: float | None = None) -> None:
+        super().__init__(message)
+        self.retry_after = retry_after
 
 
 class LLMRefusal(LLMError):
@@ -201,6 +207,24 @@ class DemoProvider:
 _provider = None
 
 
+_gemini_slots: threading.BoundedSemaphore | None = None
+_slots_lock = threading.Lock()
+
+
+def _gemini_slot() -> threading.BoundedSemaphore:
+    """Caps concurrent Gemini calls (free-tier quotas are per minute; bursts of 8 parallel calls get 429s)."""
+    global _gemini_slots
+    with _slots_lock:
+        if _gemini_slots is None:
+            _gemini_slots = threading.BoundedSemaphore(max(1, get_settings().gemini_max_concurrency))
+        return _gemini_slots
+
+
+def _retry_delay(exc: Exception) -> float | None:
+    m = re.search(r"retryDelay['\"]?\s*:\s*['\"]?(\d+(?:\.\d+)?)s", str(exc))
+    return float(m.group(1)) if m else None
+
+
 class GeminiProvider:
     """Google Gemini via the official `google-genai` SDK. Same interface as AnthropicProvider.
 
@@ -232,7 +256,8 @@ class GeminiProvider:
         last: Exception | None = None
         for model in self.models:
             try:
-                return model, self._call(lambda: self.client.models.generate_content(model=model, contents=contents, config=config))
+                with _gemini_slot():
+                    return model, self._call(lambda: self.client.models.generate_content(model=model, contents=contents, config=config))
             except TransientLLMError as exc:
                 last = exc
             except LLMError as exc:
@@ -252,7 +277,7 @@ class GeminiProvider:
             return fn()
         except e.ClientError as exc:
             if exc.code == 429:
-                raise TransientLLMError("The AI service is busy (rate limited).") from exc
+                raise TransientLLMError("The AI service is busy (rate limited).", _retry_delay(exc)) from exc
             raise LLMError(f"AI request rejected ({exc.code}): {exc.message}") from exc
         except e.ServerError as exc:
             raise TransientLLMError("The AI service had a temporary error.") from exc

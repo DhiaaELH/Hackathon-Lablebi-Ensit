@@ -247,3 +247,62 @@ PROJECTS = {
          "difficulty": "intermediate", "effort_hours": 3, "materials": ["Tableur", "Optionnel : Cisco Packet Tracer"], "success_criteria": ["Aucun chevauchement de plages", "Chaque zone a assez d'adresses"]},
     ]},
 }
+
+
+def p(concept, statement, difficulty, hints, solution, rubric, cites):
+    return {"concept_key": concept, "statement": statement, "difficulty": difficulty, "hints": hints,
+            "worked_solution": solution, "rubric": rubric, "citations": cites}
+
+
+PROBLEMS = {
+    S["2.3"]: [p("sous_reseaux",
+                 "Une entreprise dispose du réseau $192.168.10.0/24$. Elle veut 4 sous-réseaux de même taille.\n"
+                 "a) Combien de bits faut-il emprunter et quel est le nouveau masque (notation CIDR et décimale) ?\n"
+                 "b) Donnez l'adresse réseau et l'adresse de diffusion de chaque sous-réseau.\n"
+                 "c) Combien d'hôtes utilisables chaque sous-réseau contient-il ?",
+                 "medium",
+                 ["Cherchez $n$ tel que $2^n \\geq 4$.", "Avec $n = 2$ on passe de /24 à /26 : il reste $h = 6$ bits d'hôte, donc un pas de $2^6 = 64$.",
+                  "Les sous-réseaux commencent à .0, .64, .128, .192 ; la diffusion est l'adresse juste avant le sous-réseau suivant."],
+                 "a) $2^n \\geq 4 \\Rightarrow n = 2$ bits empruntés. Nouveau masque : /26, soit 255.255.255.192.\n"
+                 "b) Pas de $2^6 = 64$ :\n- 192.168.10.0 → diffusion 192.168.10.63\n- 192.168.10.64 → diffusion 192.168.10.127\n"
+                 "- 192.168.10.128 → diffusion 192.168.10.191\n- 192.168.10.192 → diffusion 192.168.10.255\n"
+                 "c) $h = 32 - 26 = 6$, donc $2^6 - 2 = 62$ hôtes utilisables par sous-réseau.",
+                 ["2 bits empruntés, masque /26 = 255.255.255.192", "Pas de 64 entre les sous-réseaux",
+                  "Les 4 adresses réseau et de diffusion correctes", "62 hôtes utilisables (on retire réseau et diffusion)"],
+                 [S["2.3"]])],
+    S["2.2"]: [p("binaire",
+                 "On considère l'hôte $172.16.45.200$ avec le masque $255.255.240.0$.\n"
+                 "a) Écrivez le troisième octet de l'adresse et du masque en binaire.\n"
+                 "b) Calculez l'adresse réseau par un ET logique.\n"
+                 "c) Déduisez l'adresse de diffusion de ce réseau.",
+                 "hard",
+                 ["Seul le 3e octet est « intéressant » : le masque y vaut 240 = 11110000.", "45 = 32 + 8 + 4 + 1 = 00101101 ; faites le ET bit à bit avec 11110000.",
+                  "Pour la diffusion, mettez à 1 tous les bits d'hôte (les 4 derniers bits du 3e octet et tout le 4e octet)."],
+                 "a) 45 = 00101101 et 240 = 11110000.\nb) 00101101 ET 11110000 = 00100000 = 32, donc l'adresse réseau est 172.16.32.0 (/20).\n"
+                 "c) Bits d'hôte à 1 : 3e octet 00101111 = 47 et 4e octet 255, donc la diffusion est 172.16.47.255.",
+                 ["Conversion correcte de 45 et 240 en binaire", "ET logique bit à bit appliqué correctement", "Adresse réseau 172.16.32.0",
+                  "Diffusion 172.16.47.255"],
+                 [S["2.2"]])],
+    S["3.1"]: [p("routage",
+                 "Un routeur possède la table suivante :\n- 10.0.0.0/8 → interface A\n- 10.20.0.0/16 → interface B\n- 10.20.30.0/24 → interface C\n- 0.0.0.0/0 → interface D\n"
+                 "Par quelle interface sortent les paquets destinés à : a) 10.20.30.7 ; b) 10.20.99.1 ; c) 10.5.5.5 ; d) 8.8.8.8 ? Justifiez avec la règle du plus long préfixe.",
+                 "medium",
+                 ["Pour chaque destination, listez toutes les entrées qui correspondent.", "Parmi elles, gardez celle dont le préfixe est le plus long (/24 > /16 > /8 > /0)."],
+                 "a) Correspond à /8, /16, /24 et /0 → plus long préfixe /24 → interface C.\nb) Correspond à /8, /16 et /0 → /16 → interface B.\n"
+                 "c) Correspond à /8 et /0 → /8 → interface A.\nd) Seule la route par défaut 0.0.0.0/0 correspond → interface D.",
+                 ["a) interface C", "b) interface B", "c) interface A", "d) interface D (route par défaut)", "Justification par le plus long préfixe"],
+                 [S["3.1"]])],
+    S["1.2"]: [p("osi",
+                 "Un navigateur envoie une requête HTTP à un serveur web situé sur un autre réseau.\n"
+                 "Décrivez l'encapsulation de la requête de la couche application jusqu'à la couche physique : pour chaque couche traversée, "
+                 "nommez la PDU et l'information d'adressage ajoutée.",
+                 "easy",
+                 ["Pensez au port (couche transport), à l'adresse IP (couche réseau) et à l'adresse MAC (couche liaison).", "PDU : segment, paquet, trame, bits."],
+                 "Application : message HTTP. Transport : segment TCP avec ports source/destination (ex. 80). Réseau : paquet IP avec adresses IP source et "
+                 "destination (le serveur). Liaison : trame avec adresses MAC source et du prochain saut (la passerelle). Physique : bits transmis sur le support.",
+                 ["Ordre correct des couches", "PDU nommées : segment, paquet, trame, bits", "Port au niveau transport, IP au niveau réseau",
+                  "MAC du prochain saut (passerelle), pas du serveur"],
+                 [S["1.2"], S["1.1"]])],
+}
+for _ex in EXERCISES["exercises"]:
+    _ex["problems"] = PROBLEMS.get(_ex["section_title"], [])

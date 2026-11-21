@@ -8,7 +8,7 @@ import { api } from "./client";
 import type {
   AssessmentCard, AssessmentDetail, CourseCard, CourseDetail, Health, Insights, Me, NotificationT, NovaHistoryItem,
   Progress, Projects, Revision, TeacherResponseT, ThreadCard, ThreadDetail, WorkflowStatus,
-  ConversationT, DueCards, ExamList, ExamT, GlossaryTermT, GroupT, MessagesPage, PublicProfile, QueueItem, Recs, ReportT, SharedT,
+  ConversationT, DueCards, Suggestion, ExamList, ExamT, GlossaryTermT, GroupT, MessagesPage, PublicProfile, QueueItem, Recs, ReportT, SharedT,
 } from "./types";
 
 const MIN = 60_000;
@@ -45,6 +45,7 @@ export const qk = {
   due: (courseId: string) => ["due", courseId] as const,
   queue: ["queue"] as const,
   reports: ["reports"] as const,
+  suggestions: ["suggestions"] as const,
 };
 
 export const useMe = () =>
@@ -103,6 +104,8 @@ export const useExam = (id: string | null) => useQuery({ queryKey: qk.exam(id ??
 export const useDue = (courseId: string) => useQuery({ queryKey: qk.due(courseId), queryFn: () => api.get<DueCards>(`/api/courses/${courseId}/flashcards/due`) });
 export const useQueue = (enabled: boolean) =>
   useQuery({ queryKey: qk.queue, queryFn: () => api.get<{ items: QueueItem[]; min_cohort: number }>("/api/senior/queue"), enabled });
+export const useSuggestions = () =>
+  useQuery({ queryKey: qk.suggestions, queryFn: () => api.get<Suggestion[]>("/api/users/suggestions"), staleTime: 5 * MIN });
 export const useReports = () => useQuery({ queryKey: qk.reports, queryFn: () => api.get<ReportT[]>("/api/admin/reports") });
 
 export function useInvalidate() {

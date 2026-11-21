@@ -166,6 +166,14 @@ def seed(reset: bool = False) -> None:
         db.add(TeacherResponse(course_id=course_id, section_id=sections["2.2"].id, teacher_id=teacher_id, kind="next_session",
                                body="[DÉMO] Nous referons la conversion binaire au tableau en début de prochaine séance."))
         # --- social / community extras (all synthetic) ---
+        bios = {"synthetic1": "Passionnée de réseaux et de cybersécurité.", "synthetic2": "En L1 info, j'aime les maths et l'algorithmique.",
+                "synthetic3": "Je révise les sous-réseaux tous les jeudis."}
+        for uname, bio in bios.items():
+            prof = db.get(Profile, user_ids[uname])
+            prof.searchable, prof.bio, prof.message_setting = True, bio, "everyone"
+        tutor = db.get(Profile, youssef)
+        tutor.show_follows, tutor.bio = True, "Tuteur pair en réseaux (M1). Posez vos questions !"
+        db.add(Follow(follower_id=youssef, followee_id=synthetic[1]))
         db.add_all([Follow(follower_id=amira, followee_id=youssef), Follow(follower_id=youssef, followee_id=amira)])
         dm = Conversation(is_group=False, created_by=amira)
         db.add(dm)

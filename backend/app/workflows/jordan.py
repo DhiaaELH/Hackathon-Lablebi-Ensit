@@ -10,6 +10,8 @@ Clara runs first and writes the shared `policy + corpus` prompt-cache entry; the
 read it from cache.
 """
 import logging
+import random
+import time
 import traceback
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -22,6 +24,7 @@ from sqlalchemy.orm import Session
 from ..agents import roles
 from ..agents.context import CorpusTooLarge, build_outline, resolve_citations
 from ..agents.schemas import AgentEnvelope
+from ..config import get_settings
 from ..db import SessionLocal
 from ..llm.provider import LLMError, LLMRefusal, TransientLLMError
 from ..models import (
@@ -70,9 +73,16 @@ def start_workflow(db: Session, course: Course, user_id: uuid.UUID, lang: str, d
 
 
 # ---------------------------------------------------------------- retries
+def _backoff(retry: int, hint: float | None) -> float:
+    """Exponential backoff with jitter; honours the provider's retry-after hint (Gemini 'retryDelay')."""
+    base = max(hint or 0.0, 4.0 * (2 ** retry))
+    return min(get_settings().llm_max_backoff_s, base) + random.uniform(0, 1.5)
+
+
 def _attempt(db: Session, task: AgentTask, fn):
-    """Transient errors: at most 2 retries. Invalid output: 1 retry. Refusal: no retry, needs review."""
-    max_retries = 2
+    """Transient errors (429/5xx/timeouts): up to 3 retries with backoff. Invalid output: 1 retry.
+    Refusal: no retry, needs review."""
+    max_retries = 3
     while True:
         try:
             return fn()
@@ -89,7 +99,12 @@ def _attempt(db: Session, task: AgentTask, fn):
                 return None
             task.retry_count += 1
             db.commit()
-            event(db, task.workflow_id, "jordan", "retry", f"Retrying {task.agent_role} ({task.retry_count}/{limit}).", task.id)
+            wait = _backoff(task.retry_count - 1, getattr(e, "retry_after", None)) if transient else 0.0
+            event(db, task.workflow_id, "jordan", "retry",
+                  f"{task.agent_role.capitalize()}: the AI service is busy — retrying in {wait:.0f}s ({task.retry_count}/{limit})." if transient
+                  else f"Retrying {task.agent_role} ({task.retry_count}/{limit}).", task.id)
+            if wait:
+                time.sleep(wait)
 
 
 # ---------------------------------------------------------------- persistence
@@ -158,6 +173,16 @@ def _add_questions(db: Session, course: Course, assessment: Assessment, question
                         citations=resolve_citations(db, course.id, q.get("citations", []))))
 
 
+def _add_problems(db: Session, course: Course, assessment: Assessment, problems: list[dict], concepts: dict, start: int) -> None:
+    points = {"easy": 2, "medium": 3, "hard": 4}
+    for i, pb in enumerate(problems):
+        concept = concepts.get(pb.get("concept_key"))
+        db.add(Question(assessment_id=assessment.id, concept_id=concept.id if concept else None, ordinal=start + i, qtype="open",
+                        prompt=pb["statement"], choices=[], correct_index=None, answer_text=pb["worked_solution"], explanation="",
+                        hints=pb.get("hints", []), rubric=pb.get("rubric", []), difficulty=pb.get("difficulty"),
+                        points=points.get(pb.get("difficulty", "medium"), 3), citations=resolve_citations(db, course.id, pb.get("citations", []))))
+
+
 def _resolve_payload_citations(db: Session, course: Course, role: str, payload: dict) -> dict:
     """Fixture citations are headings; map them to refs before Riley validates them."""
     def fix(items):
@@ -169,6 +194,7 @@ def _resolve_payload_citations(db: Session, course: Course, role: str, payload: 
     elif role == "alex":
         for ex in payload["exercises"]:
             fix(ex["questions"])
+            fix(ex.get("problems", []))
     elif role == "max":
         fix(payload["questions"])
     elif role == "sage":
@@ -196,6 +222,7 @@ def persist_role_output(db: Session, course: Course, role: str, payload: dict, l
             db.add(a)
             db.flush()
             _add_questions(db, course, a, ex["questions"], concepts)
+            _add_problems(db, course, a, ex.get("problems", []), concepts, start=len(ex["questions"]))
     elif role == "max":
         a = Assessment(course_id=course.id, kind="mock_exam", agent_role="max", title=payload["title"], quality_status=status, findings=findings)
         db.add(a)
@@ -324,3 +351,45 @@ def run_workflow(wf_id: uuid.UUID, script: str = "arabic") -> None:
         course.status = "ready"
         db.commit()
         event(db, wf.id, "jordan", "finished", "Everything is ready." if wf.status == "done" else "Ready, but some items need review or failed.")
+
+
+def clear_role_output(db: Session, course_id: uuid.UUID, role: str) -> None:
+    """Remove a role's previous artefacts before re-running it, so a retry never duplicates content."""
+    if role in ("quinn", "alex", "max"):
+        db.execute(delete(Assessment).where(Assessment.course_id == course_id, Assessment.agent_role == role))
+    if role == "sage":
+        db.execute(delete(AgentArtifact).where(AgentArtifact.course_id == course_id, AgentArtifact.kind == "revision"))
+    if role == "max":
+        db.execute(delete(AgentArtifact).where(AgentArtifact.course_id == course_id, AgentArtifact.kind == "mock_exam_meta"))
+    db.commit()
+
+
+def retry_failed(wf_id: uuid.UUID, script: str = "arabic") -> None:
+    with SessionLocal() as db:
+        wf = db.get(WorkflowRun, wf_id)
+        tasks = db.scalars(select(AgentTask).where(AgentTask.workflow_id == wf.id, AgentTask.agent_role.in_(PARALLEL_ROLES),
+                                                   AgentTask.status.in_(["pending", "failed", "needs_review"]))).all()
+        if not tasks:
+            return
+        wf.status = "running"
+        for t in tasks:
+            clear_role_output(db, t.course_id, t.agent_role)
+            t.status, t.error, t.retry_count = "pending", None, 0
+        db.commit()
+        event(db, wf.id, "jordan", "dispatch", f"Retrying: {', '.join(t.agent_role.capitalize() for t in tasks)}.")
+        ids = [t.id for t in tasks]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for f in [pool.submit(_run_parallel_role, wf_id, tid, script) for tid in ids]:
+            try:
+                f.result()
+            except Exception:
+                log.error("retry crashed: %s", traceback.format_exc())
+    with SessionLocal() as db:
+        wf = db.get(WorkflowRun, wf_id)
+        for t in db.scalars(select(AgentTask).where(AgentTask.workflow_id == wf.id, AgentTask.status.in_(["pending", "running"]))):
+            t.status, t.error = "failed", "internal error"
+        statuses = [t.status for t in db.scalars(select(AgentTask).where(AgentTask.workflow_id == wf.id))]
+        wf.status = "done" if all(s == "done" for s in statuses) else "partial"
+        wf.updated_at = _now()
+        db.commit()
+        event(db, wf.id, "jordan", "finished", "Everything is ready." if wf.status == "done" else "Ready, but some items still need review or failed.")

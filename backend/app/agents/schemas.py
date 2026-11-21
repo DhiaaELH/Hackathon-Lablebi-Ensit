@@ -90,9 +90,21 @@ class QuizSet(BaseModel):
     quizzes: list[ChapterQuiz]
 
 
+class OpenProblem(BaseModel):
+    """A full TD-style exercise answered in free text (not multiple choice)."""
+    concept_key: str
+    statement: str = Field(description="complete exercise statement, may contain several numbered sub-questions; LaTeX in $...$")
+    difficulty: Literal["easy", "medium", "hard"]
+    hints: list[str] = Field(description="2-3 progressive hints, from a gentle nudge to an almost-complete step")
+    worked_solution: str = Field(description="complete step-by-step solution a teacher would accept")
+    rubric: list[str] = Field(description="3-5 key points a correct answer must contain")
+    citations: list[str]
+
+
 class SectionExercises(BaseModel):
     section_title: str
     questions: list[QuestionOut]
+    problems: list[OpenProblem] = Field(description="open-ended exercises; [] if the section has nothing to practise")
 
 
 class ExerciseSet(BaseModel):
@@ -161,6 +173,14 @@ class TutorReply(BaseModel):
     supported_by_course: bool
     method: str = Field(description="teaching method used, e.g. analogy, worked example, step-by-step")
     follow_up_question: str
+
+
+class OpenGrade(BaseModel):
+    score: int = Field(description="0-100")
+    met: list[str] = Field(description="rubric points the answer satisfies")
+    missing: list[str] = Field(description="rubric points missing or wrong")
+    feedback: str = Field(description="2-4 sentences: what is right, what to fix, next step; no full solution")
+    misconception: str = Field(description="the misconception behind the main error, or ''")
 
 
 class RouteDecision(BaseModel):

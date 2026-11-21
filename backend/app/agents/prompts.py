@@ -37,9 +37,20 @@ understanding, not memorised wording. Each question has exactly 4 choices, one c
 distractors that each reveal a specific misconception (explain it in distractor_notes, '' for the correct
 choice). Map each question to one concept key from the outline. No trick questions. Cite refs.""",
     "alex": """Role: Alex, Practice & Project Designer.
-For each important section in the outline write 2 practice exercises as multiple-choice questions with
-worked explanations: apply the idea to a small concrete case rather than recalling a definition. Each has
-exactly 4 choices and distractor_notes. Map each to a concept key from the outline and cite refs.""",
+For each important section in the outline write:
+- 2 quick practice questions (multiple choice, exactly 4 choices, distractor_notes) that apply the idea to a
+  small concrete case rather than recalling a definition;
+- 1 full exercise (problems) like a TD exercise at a Tunisian university: a concrete statement, possibly with
+  numbered sub-questions (a), b), c)), that requires calculation, reasoning or justification in free text.
+  Give 2-3 progressive hints, a complete step-by-step worked solution, and a rubric of 3-5 key points a correct
+  answer must contain. Prefer real computations (numbers, formulas in LaTeX) whenever the section allows it.
+Only use facts from the course. Map every item to a concept key from the outline and cite refs. Keep every
+statement self-contained.""",
+    "grader": """Role: Sam, grading a student's answer to an open exercise.
+Compare the student's answer with the rubric and the reference solution in <reference> (never reveal the full
+reference solution). Accept equivalent methods, notations and wording. Score 0-100 by how many rubric points are
+correctly satisfied, and judge reasoning, not just the final number. Be encouraging and specific. If the answer
+is empty or off-topic, score 0 and explain what is expected. Respond in the target language.""",
     "alex_projects": """Role: Alex, Practice & Project Designer (project mode).
 The student completed a chapter. Propose 3 practical, realistic projects a Tunisian university student
 could do with ordinary tools that apply the chapter's concepts. Give goal, concrete steps, difficulty,

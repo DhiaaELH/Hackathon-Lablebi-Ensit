@@ -132,7 +132,13 @@ def exercises(struct: dict) -> dict:
             qs = _mcq_from_terms(own + [t for t in pool if t not in own], rng, limit=1)
             if qs:
                 qs[0]["prompt"] = "Exercice : " + qs[0]["prompt"]
-                out.append({"section_title": s["title"], "questions": qs})
+            term, definition, ckey, cites = own[0]
+            problem = {"concept_key": ckey, "difficulty": "easy", "citations": cites,
+                       "statement": f"Expliquez avec vos propres mots la notion de « {term} », puis donnez un exemple concret et une erreur fréquente à éviter.",
+                       "hints": [f"Relisez la section « {s['title']} ».", "Commencez par la définition, puis appliquez-la à un cas simple."],
+                       "worked_solution": f"{term} : {definition}",
+                       "rubric": [f"Définition correcte de « {term} »", "Un exemple concret et juste", "Une erreur fréquente identifiée"]}
+            out.append({"section_title": s["title"], "questions": qs, "problems": [problem]})
     return {"exercises": out[:8]}
 
 

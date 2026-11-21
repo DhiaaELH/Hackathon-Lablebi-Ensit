@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-3.5-flash"
     gemini_fallback_models: str = "gemini-3.5-flash-lite"
     gemini_fast_model: str = "gemini-3.5-flash-lite"
+    gemini_max_concurrency: int = 2  # simultaneous Gemini calls (raise on paid plans)
+    llm_max_backoff_s: float = 45.0
     # Optional per-tier override "provider:model", e.g. LLM_FAST=anthropic:claude-haiku-5-5, LLM_SMART=gemini:gemini-3.5-flash
     llm_fast: str | None = None  # interactive: Sam (tutor) via Nova
     llm_smart: str | None = None  # background generation: Clara, Quinn, Alex, Sage, Max, Riley

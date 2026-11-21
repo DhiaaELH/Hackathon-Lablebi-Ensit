@@ -133,7 +133,9 @@ export function CoursePage() {
           {c.access === "owner" && <PublishControl courseId={c.id} visibility={c.visibility} />}
         </div>
       </div>
-      {processing && c.workflow && <WorkflowProgress workflowId={c.workflow.id} onDone={onWorkflowDone} />}
+      {c.workflow && (processing || (c.workflow.status === "partial" && (c.access === "owner" || c.access === "teacher"))) && (
+        <WorkflowProgress workflowId={c.workflow.id} onDone={onWorkflowDone} canRetry={c.access === "owner" || c.access === "teacher"} />
+      )}
       <div className="workspace">
         <div style={{ minWidth: 0 }}>
           <Tabs tabs={TABS.map((x) => ({ id: x, label: labels[x][0], icon: labels[x][1] }))} value={tab} onChange={setTab} />

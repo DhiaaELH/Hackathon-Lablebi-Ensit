@@ -6,6 +6,7 @@ interface I18nCtx {
   lang: Lang;
   setLang: (l: Lang) => void;
   t: (k: MessageKey) => string;
+  tf: (k: MessageKey, args: Record<string, string | number>) => string;
   dir: "rtl" | "ltr";
 }
 
@@ -42,6 +43,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         }
       },
       t: (k) => MESSAGES[lang][k] ?? MESSAGES.fr[k] ?? k,
+      tf: (k, args) => (MESSAGES[lang][k] ?? MESSAGES.fr[k] ?? k).replace(/\{(\w+)\}/g, (_, n: string) => String(args[n] ?? "")),
     }),
     [lang, dir],
   );

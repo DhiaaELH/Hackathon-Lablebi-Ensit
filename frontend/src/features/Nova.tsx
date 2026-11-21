@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import { qk, useNovaHistory, useQueryClient } from "../api/hooks";
 import { Icon } from "../components/Icon";
+import { SpeakButton } from "../components/Speech";
 import type { NovaHistoryItem, NovaReply, RefT } from "../api/types";
 import { AGENT_INITIAL, AGENT_NAME, Citations } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
@@ -146,6 +147,7 @@ export function NovaPanel({ courseId, refs, request, onOpenTab }: {
               </div>
             )}
             <Rich text={l.text} />
+            {l.role === "assistant" && l.text.length > 20 && <div style={{ marginTop: 2, marginInlineStart: -8 }}><SpeakButton id={`nova-${l.key}`} label="" text={l.text} /></div>}
             {l.citations?.length > 0 && <div style={{ marginTop: 6 }}><Citations refs={l.citations} map={refs} /></div>}
             {l.action && <div style={{ marginTop: 6 }}><button className="btn btn-sm" onClick={() => onOpenTab(l.action!.open)}>{t("open")} <Icon name="arrow" size={13} /></button></div>}
           </div>

@@ -8,6 +8,7 @@ import { initials } from "../components/Layout";
 import { useToast } from "../components/Toast";
 import { Empty, ErrorBox, Spinner } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
+import { WhoToFollow } from "../features/WhoToFollow";
 
 export function ProfileCard({ p, onChange }: { p: PublicProfile; onChange?: () => void }) {
   const { t } = useI18n();
@@ -92,7 +93,7 @@ export function People() {
       {people.isFetching && <Spinner />}
       {people.error && <ErrorBox error={people.error} />}
       {debounced.length >= 2 && people.data?.length === 0 && <Empty>{t("nothingHere")}</Empty>}
-      {debounced.length < 2 && <Empty>{t("searchPeople")} — try “you”, “am”</Empty>}
+      {debounced.length < 2 && <WhoToFollow limit={6} />}
       <div className="grid grid-3">{people.data?.map((p) => <ProfileCard key={p.username} p={p} />)}</div>
     </div>
   );

@@ -4,6 +4,7 @@ import { qk, useDue, useInvalidate, useProgress, useRevision } from "../api/hook
 import type { CourseDetail, DueCard, Revision as RevisionT } from "../api/types";
 import { Icon } from "../components/Icon";
 import { Rich } from "../components/Rich";
+import { SpeakButton, SpeechSettings } from "../components/Speech";
 import { Citations, Empty, ErrorBox, QualityBadge, Spinner, Tabs } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 
@@ -20,7 +21,8 @@ function Flashcard({ c, course, big, flipped: ctrl, onFlip }: { c: Card; course:
       <div className="flip-inner">
         <div className="flip-face"><span className="badge">{c.kind}</span><span className="front"><Rich text={c.front} /></span></div>
         <div className="flip-face flip-back">
-          <Rich text={c.back} />
+          <Rich as="div" text={c.back} />
+          <span onClick={(e) => e.stopPropagation()}><SpeakButton id={`fc-${c.front}`} label="" text={`${c.front}. ${c.back}`} /></span>
           <span onClick={(e) => e.stopPropagation()}><Citations refs={c.citations} map={course.refs} /></span>
         </div>
       </div>
@@ -74,15 +76,6 @@ function ReviewMode({ course }: { course: CourseDetail }) {
       )}
     </div>
   );
-}
-
-function speak(text: string, lang: string, onEnd: () => void) {
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = { fr: "fr-FR", en: "en-US", ar: "ar-SA", derja: "ar-TN" }[lang] ?? "fr-FR";
-  u.rate = 0.98;
-  u.onend = onEnd;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
 }
 
 function Planner({ course }: { course: CourseDetail }) {
@@ -151,23 +144,21 @@ ${rev.summaries.map((s) => `<h2>${esc(s.chapter_title)}</h2><ul>${s.bullets.map(
 }
 
 export function RevisionTab({ course }: { course: CourseDetail }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const r = useRevision(course.id);
   const due = useDue(course.id);
   const [view, setView] = useState<"summary" | "cards" | "review" | "plan">("summary");
-  const [speaking, setSpeaking] = useState<string | null>(null);
-  useEffect(() => () => window.speechSynthesis?.cancel(), []);
   if (r.isLoading) return <Spinner />;
   if (r.error) return <ErrorBox error={r.error} />;
   const rev = r.data?.revision;
   if (!rev) return <Empty>—</Empty>;
-  const canSpeak = typeof window !== "undefined" && "speechSynthesis" in window;
   const dueCount = due.data?.due.length ?? 0;
   return (
     <div className="stack" style={{ gap: "1rem" }}>
       <div className="row between">
         <QualityBadge status={r.data?.quality_status} />
         <div className="row">
+          <SpeechSettings />
           <button className="btn btn-sm" onClick={() => downloadPack(course, rev)}><Icon name="download" size={14} /> {t("studyPack")}</button>
           <a className="btn btn-sm btn-primary" href={`/api/courses/${course.id}/revision.pdf`} download><Icon name="file" size={14} /> PDF</a>
         </div>
@@ -182,12 +173,7 @@ export function RevisionTab({ course }: { course: CourseDetail }) {
           <section key={s.chapter_title} className="card stack">
             <div className="row between" style={{ flexWrap: "nowrap" }}>
               <h2 style={{ margin: 0 }}>{s.chapter_title}</h2>
-              {canSpeak && (
-                <button className="btn btn-sm btn-ghost" aria-pressed={speaking === s.chapter_title}
-                  onClick={() => { if (speaking === s.chapter_title) { window.speechSynthesis.cancel(); setSpeaking(null); } else { setSpeaking(s.chapter_title); speak(text.replace(/\$/g, ""), lang, () => setSpeaking(null)); } }}>
-                  <Icon name={speaking === s.chapter_title ? "stop" : "play"} size={14} /> {speaking === s.chapter_title ? t("stopListening") : t("listen")}
-                </button>
-              )}
+              <SpeakButton id={`sum-${s.chapter_title}`} text={text} />
             </div>
             <ul className="term-list">{s.bullets.map((b, i) => <li key={i}><Rich text={b} /></li>)}</ul>
             <div><Citations refs={s.citations} map={course.refs} /></div>

@@ -6,8 +6,9 @@ import type { CourseCard, Lang } from "../api/types";
 import { Icon } from "../components/Icon";
 import { useToast } from "../components/Toast";
 import { Empty, ErrorBox } from "../components/ui";
+import { WhoToFollow } from "../features/WhoToFollow";
 import { useI18n } from "../i18n/I18n";
-import { LANG_LABEL } from "../i18n/messages";
+import { LANG_LABEL, type MessageKey } from "../i18n/messages";
 
 export function CourseTile({ c, action }: { c: CourseCard; action?: ReactNode }) {
   const { t } = useI18n();
@@ -32,7 +33,7 @@ export function CourseTile({ c, action }: { c: CourseCard; action?: ReactNode })
 }
 
 function Recommendations() {
-  const { t } = useI18n();
+  const { t, tf } = useI18n();
   const recs = useRecs();
   const invalidate = useInvalidate();
   const toast = useToast();
@@ -73,7 +74,7 @@ function Recommendations() {
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <Link to={link(r)} style={{ fontWeight: 600, color: "var(--ink)" }}>{r.title}</Link>
-            <div className="small muted"><span className="eyebrow" style={{ marginInlineEnd: 6 }}>{t("whySuggested")}</span>{r.reason}</div>
+            <div className="small muted"><span className="eyebrow" style={{ marginInlineEnd: 6 }}>{t("whySuggested")}</span>{r.reason_code ? tf(`r_${r.reason_code}` as MessageKey, r.reason_args ?? {}) : r.reason}</div>
           </div>
           <button className="btn btn-sm btn-ghost btn-icon" aria-pressed={r.saved} aria-label={t("saveIt")} title={t("saveIt")} onClick={() => fb(r.id, r.saved ? "none" : "saved")}>
             <Icon name="bookmark" size={16} className={r.saved ? "" : "muted"} />
@@ -149,7 +150,10 @@ export function Dashboard() {
             <span className="btn btn-accent btn-sm" style={{ alignSelf: "flex-start", marginTop: "0.6rem" }}>{t("open")} <Icon name="arrow" size={14} /></span>
           </Link>
         ) : <div />}
-        <Recommendations />
+        <div className="stack" style={{ gap: "1rem" }}>
+          <Recommendations />
+          <WhoToFollow limit={3} compact />
+        </div>
       </div>
 
       <section className="stack">

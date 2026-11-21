@@ -8,6 +8,8 @@ import { useToast } from "../components/Toast";
 import { Citations, Empty, ErrorBox, QualityBadge, Spinner } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 import type { NovaRequest } from "./Nova";
+import { ProblemCard } from "./Problem";
+import { SpeakButton, SpeechSettings } from "../components/Speech";
 
 type Ask = (r: Omit<NovaRequest, "nonce">) => void;
 
@@ -58,7 +60,8 @@ function Runner({ id, course, ask, onClose }: { id: string; course: CourseDetail
   const [result, setResult] = useState<AttemptResult | null>(null);
   const [err, setErr] = useState<unknown>(null);
   const invalidate = useInvalidate();
-  const qs = a.data?.questions ?? [];
+  const qs = (a.data?.questions ?? []).filter((x) => x.qtype !== "open");
+  const problems = (a.data?.questions ?? []).filter((x) => x.qtype === "open");
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -101,8 +104,9 @@ function Runner({ id, course, ask, onClose }: { id: string; course: CourseDetail
           <span className="eyebrow">{{ exercise: t("exercise"), chapter_quiz: t("chapterQuiz"), mock_exam: t("mockExam") }[a.data.kind] ?? a.data.kind}</span>
           <h2 style={{ margin: 0 }}>{a.data.title}</h2>
         </div>
-        <div className="row"><QualityBadge status={a.data.quality_status} /><button className="btn btn-sm btn-ghost btn-icon" onClick={onClose} aria-label="close"><Icon name="x" /></button></div>
+        <div className="row"><SpeechSettings /><QualityBadge status={a.data.quality_status} /><button className="btn btn-sm btn-ghost btn-icon" onClick={onClose} aria-label="close"><Icon name="x" /></button></div>
       </div>
+      {qs.length > 0 && problems.length > 0 && <h3 className="row" style={{ margin: 0 }}><Icon name="question" size={16} /> {t("quickQuestions")}</h3>}
       {result && (
         <div className="row" style={{ background: "var(--paper)", padding: "0.8rem", borderRadius: 12 }}>
           <div className="ring" style={{ ["--p" as string]: pct }}><span>{pct}%</span></div>
@@ -111,17 +115,20 @@ function Runner({ id, course, ask, onClose }: { id: string; course: CourseDetail
           <button className="btn btn-sm" onClick={() => { setResult(null); setAnswers({}); setCur(0); }}>{t("retry")}</button>
         </div>
       )}
-      <div className="qnav" role="tablist" aria-label="questions">
+      {qs.length > 0 && <div className="qnav" role="tablist" aria-label="questions">
         {qs.map((qq, i) => {
           const rr = res(qq.id);
           const cls = rr ? (rr.correct ? "right" : "wrong") : answers[qq.id] !== undefined ? "answered" : "";
           return <button key={qq.id} role="tab" aria-selected={i === cur} className={`qdot ${cls}${i === cur ? " current" : ""}`} onClick={() => setCur(i)}>{i + 1}</button>;
         })}
-      </div>
+      </div>}
       {q && (
         <fieldset className="stack" style={{ border: 0, padding: 0, margin: 0 }} key={q.id}>
-          <legend style={{ fontWeight: 600, marginBottom: 8, fontSize: "1.05rem" }}>
-            <span className="muted">{cur + 1}.</span> <Rich text={q.prompt} /> <span className="muted small">({q.points} pt)</span>
+          <legend style={{ fontWeight: 600, marginBottom: 8, fontSize: "1.05rem", width: "100%" }}>
+            <span className="row between" style={{ flexWrap: "nowrap", alignItems: "flex-start" }}>
+              <span><span className="muted">{cur + 1}.</span> <Rich text={q.prompt} /> <span className="muted small">({q.points} pt)</span></span>
+              <SpeakButton id={`q-${q.id}`} label="" text={`${q.prompt}. ${q.choices.map((c, i) => `${i + 1}: ${c}`).join(". ")}`} />
+            </span>
           </legend>
           {q.choices.map((c, ci) => {
             const cls = r ? (ci === r.correct_index ? "right" : ci === r.chosen ? "wrong" : "") : answers[q.id] === ci ? "selected" : "";
@@ -149,15 +156,21 @@ function Runner({ id, course, ask, onClose }: { id: string; course: CourseDetail
           )}
         </fieldset>
       )}
-      <div className="row between">
+      {qs.length > 0 && <div className="row between">
         <div className="row">
           <button className="btn btn-sm" disabled={cur === 0} onClick={() => setCur((c) => c - 1)}><Icon name="back" size={14} /></button>
           <button className="btn btn-sm" disabled={cur >= qs.length - 1} onClick={() => setCur((c) => c + 1)}><Icon name="arrow" size={14} /></button>
           <span className="tiny muted">{t("questionShortcuts")}</span>
         </div>
         {!result && <button className="btn btn-primary" disabled={Object.keys(answers).length === 0} onClick={submit}>{t("submit")} · {Object.keys(answers).length}/{qs.length}</button>}
-      </div>
+      </div>}
       {err != null && <ErrorBox error={err} />}
+      {problems.length > 0 && (
+        <section className="stack" style={{ marginTop: qs.length ? "0.6rem" : 0 }}>
+          <h3 className="row" style={{ margin: 0 }}><Icon name="wand" size={16} /> {t("problems")}</h3>
+          {problems.map((pb, i) => <ProblemCard key={pb.id} q={pb} index={i + 1} course={course} onGraded={() => invalidate([...qk.progress(course.id)], [...qk.recs])} />)}
+        </section>
+      )}
       {result && result.gaps.length > 0 && (
         <div className="card stack" style={{ background: "var(--primary-soft)", borderColor: "var(--primary-line)" }}>
           <strong><Icon name="target" size={16} /> {t("gapTitle")}</strong>
@@ -199,7 +212,7 @@ export function Practice({ course, ask }: { course: CourseDetail; ask: Ask }) {
                     <div className="ring" style={{ ["--p" as string]: pct ?? 0, width: 52, height: 52, fontSize: "0.78rem" }}><span>{pct === null ? "—" : `${pct}%`}</span></div>
                     <div className="stack" style={{ gap: 2, minWidth: 0 }}>
                       <strong style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{a.title.replace(/^(Quiz|Exercices) — /, "")}</strong>
-                      <span className="row tiny muted">{a.questions} Q · <QualityBadge status={a.quality_status} /></span>
+                      <span className="row tiny muted">{a.questions} Q{a.problems ? ` · ${a.problems} ${t("problems").toLowerCase()}` : ""} · <QualityBadge status={a.quality_status} /></span>
                     </div>
                   </button>
                 );

@@ -310,6 +310,29 @@ class Question(Base):
     distractor_notes: Mapped[list] = mapped_column(JSONB, default=list)  # misconception per wrong choice
     points: Mapped[int] = mapped_column(Integer, default=1)
     citations: Mapped[list] = mapped_column(JSONB, default=list)
+    # open problems (qtype == "open")
+    hints: Mapped[list] = mapped_column(JSONB, default=list)
+    rubric: Mapped[list] = mapped_column(JSONB, default=list)
+    difficulty: Mapped[str | None] = mapped_column(String(12))
+
+
+class OpenAnswer(Base):
+    """A student's free-text answer to an open problem, with its (AI or rule-based) grading."""
+    __tablename__ = "open_answers"
+    id: Mapped[uuid.UUID] = pk()
+    user_id: Mapped[uuid.UUID] = fk("users.id")
+    question_id: Mapped[uuid.UUID] = fk("questions.id")
+    answer: Mapped[str] = mapped_column(Text)
+    score: Mapped[int | None] = mapped_column(Integer)  # None = gave up / viewed solution
+    grading: Mapped[dict] = mapped_column(JSONB, default=dict)
+    hints_used: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = ts()
+
+
+class ProfileSuggestionDismissal(Base):
+    __tablename__ = "profile_suggestion_dismissals"
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
 
 
 class Attempt(Base):

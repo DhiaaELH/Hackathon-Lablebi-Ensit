@@ -17,6 +17,7 @@ from .context import corpus_block, known_refs
 from .prompts import GLOBAL_POLICY, ROLE_PROMPTS, language_instruction
 from .schemas import (
     CourseStructure,
+    OpenGrade,
     ExerciseSet,
     MockExam,
     ProjectSet,
@@ -115,6 +116,15 @@ def riley_rules(kind: str, payload: dict, refs: set[str], concept_keys: set[str]
         for ex in payload.get("exercises", []):
             for i, q in enumerate(ex["questions"]):
                 findings += _question_rules(q, refs, concept_keys, f"{ex['section_title']} E{i + 1}")
+            for i, pb in enumerate(ex.get("problems", [])):
+                where = f"{ex['section_title']} P{i + 1}"
+                if len(pb.get("rubric", [])) < 2 or not pb.get("worked_solution", "").strip():
+                    findings.append({"severity": "high", "item": where, "issue": "Open problem needs a worked solution and at least 2 rubric points."})
+                if not pb.get("hints"):
+                    findings.append({"severity": "low", "item": where, "issue": "Open problem has no hints."})
+                bad = [c for c in pb.get("citations", []) if c not in refs]
+                if bad or not pb.get("citations"):
+                    findings.append({"severity": "medium", "item": where, "issue": "Missing or invalid source citation."})
     elif kind == "max":
         for i, q in enumerate(payload.get("questions", [])):
             findings += _question_rules(q, refs, concept_keys, f"Mock Q{i + 1}")
@@ -244,3 +254,41 @@ def _demo_tutor(mode: str, lang: str, hits: list[Hit], hint_level: int, question
         msg, method = T("answer", lang, loc=_loc(top), text=top.text[:600]), "direct explanation"
     return {"message": f"{msg}\n\n{note}", "citations": [top.ref] + ([hits[1].ref] if len(hits) > 1 and mode == "answer" else []),
             "supported_by_course": True, "method": method, "follow_up_question": ""}
+
+
+# ---------------------------------------------------------------- open-problem grading (fast tier)
+def grade_open(db: Session, course: Course, question: dict, answer: str, lang: str, script: str) -> tuple[dict, bool]:
+    """Returns (grading dict, demo flag). The reference solution stays server-side."""
+    provider = get_provider("fast")
+    if isinstance(provider, DemoProvider):
+        return _demo_grade(question, answer), True
+    hits = hybrid_search(db, [course.id], question["prompt"], k=3)
+    rubric = "\n".join(f"- {r}" for r in question["rubric"])
+    user = (f"{ROLE_PROMPTS['grader']}\n\n{language_instruction(lang, script)}\n\n"
+            f"<passages>\n{format_passages(hits)}\n</passages>\n\n"
+            f"<exercise>\n{question['prompt']}\n</exercise>\n\n<reference>\nRubric:\n{rubric}\n\nReference solution:\n{question['solution']}\n</reference>\n\n"
+            f"<student_answer>\n{answer}\n</student_answer>")
+    grade, _ = provider.structured("grader", [SystemBlock(GLOBAL_POLICY)], [{"role": "user", "content": user}], OpenGrade, app_cache=False, effort="low")
+    data = grade.model_dump()
+    data["score"] = max(0, min(100, data["score"]))
+    return data, False
+
+
+def _demo_grade(question: dict, answer: str) -> dict:
+    """Rule-based estimate: share of rubric points whose key words appear in the answer."""
+    import re as _re
+    import unicodedata as _ud
+
+    def norm(t: str) -> set[str]:
+        t = _ud.normalize("NFKD", t.lower()).encode("ascii", "ignore").decode()
+        return {w for w in _re.findall(r"[a-z0-9./]{2,}", t) if w not in {"les", "des", "une", "est", "pas", "the", "and", "par", "pour", "avec"}}
+
+    ans = norm(answer)
+    met, missing = [], []
+    for point in question["rubric"]:
+        words = norm(point)
+        hit = len(words & ans) / max(1, len(words))
+        (met if hit >= 0.4 else missing).append(point)
+    score = round(100 * len(met) / max(1, len(question["rubric"])))
+    return {"score": score, "met": met, "missing": missing, "misconception": "",
+            "feedback": "Estimation par mots-clés (mode démo, pas d'IA) : compare ta réponse avec les points attendus, puis regarde la solution."}

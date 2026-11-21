@@ -7,7 +7,7 @@ import { Icon } from "../components/Icon";
 import { AGENT_INITIAL, AGENT_NAME, ErrorBox, Spinner, Tabs } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 
-export function WorkflowProgress({ workflowId, onDone }: { workflowId: string; onDone?: () => void }) {
+export function WorkflowProgress({ workflowId, onDone, canRetry = true }: { workflowId: string; onDone?: () => void; canRetry?: boolean }) {
   const { t } = useI18n();
   const [active, setActive] = useState(true);
   const wf = useWorkflow(workflowId, active);
@@ -43,6 +43,16 @@ export function WorkflowProgress({ workflowId, onDone }: { workflowId: string; o
         ))}
       </ol>
       {!finished && <Spinner label={t("generating")} />}
+      {canRetry && finished && wf.data.status !== "done" && wf.data.tasks.some((x) => ["failed", "needs_review"].includes(x.status) && x.agent_role !== "clara") && (
+        <div className="row">
+          <button className="btn btn-accent btn-sm" onClick={async () => {
+            await api.post(`/api/workflows/${workflowId}/retry`);
+            fired.current = false;
+            setActive(true);
+          }}><Icon name="wand" size={14} /> {t("retryFailed")}</button>
+          <span className="tiny muted">{wf.data.tasks.filter((x) => x.status === "failed").map((x) => AGENT_NAME[x.agent_role]).join(", ")}</span>
+        </div>
+      )}
     </div>
   );
 }

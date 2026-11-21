@@ -1,3 +1,8 @@
+-- In-place upgrades for databases created before these columns existed (no reset needed).
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS hints jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS rubric jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS difficulty varchar(12);
+
 -- Applied after SQLAlchemy create_all. Idempotent.
 
 -- Full-text search column for hybrid retrieval ('simple' config: language-agnostic, works for FR/EN/AR).

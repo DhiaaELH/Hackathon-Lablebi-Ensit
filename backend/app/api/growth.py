@@ -212,7 +212,8 @@ def compute_recommendations(db: Session, user) -> list[dict]:
             ratio = cp.correct / cp.total
             if ratio < 0.6:
                 items.append(("concept", str(c.id), f"You answered {cp.correct}/{cp.total} correctly on '{c.name}'. A short review should help.",
-                              2.0 + (0.6 - ratio) * 3, {"course_id": str(c.course_id), "section_id": str(c.section_id) if c.section_id else None, "title": c.name}))
+                              2.0 + (0.6 - ratio) * 3, {"course_id": str(c.course_id), "section_id": str(c.section_id) if c.section_id else None, "title": c.name,
+                                                        "reason_code": "weak_concept", "reason_args": {"correct": cp.correct, "total": cp.total, "name": c.name}}))
 
     if settings.get("next_steps", True):
         done = set(db.scalars(select(ProgressEvent.ref_id).where(ProgressEvent.user_id == user.id, ProgressEvent.kind == "section_complete")))
@@ -223,7 +224,7 @@ def compute_recommendations(db: Session, user) -> list[dict]:
             nxt = next((s for s, _ in secs if str(s.id) not in done), None)
             if started and nxt:
                 items.append(("section", str(nxt.id), f"Next in a course you started: '{nxt.title}'.", 1.5,
-                              {"course_id": str(cid), "section_id": str(nxt.id), "title": nxt.title}))
+                              {"course_id": str(cid), "section_id": str(nxt.id), "title": nxt.title, "reason_code": "next_section", "reason_args": {"title": nxt.title}}))
 
     if settings.get("library", True):
         members = dict(db.execute(select(CourseMember.course_id, func.count()).group_by(CourseMember.course_id)).all())
@@ -236,7 +237,9 @@ def compute_recommendations(db: Session, user) -> list[dict]:
             if score <= 0:
                 continue
             reason = (f"Matches your interests: {', '.join(sorted(overlap)[:3])}." if overlap else f"Popular in the library ({pop} students).")
-            items.append(("course", str(c.id), reason, score, {"course_id": str(c.id), "title": c.title}))
+            items.append(("course", str(c.id), reason, score, {"course_id": str(c.id), "title": c.title,
+                                                               "reason_code": "interest_match" if overlap else "popular",
+                                                               "reason_args": {"words": ", ".join(sorted(overlap)[:3]), "count": pop}}))
 
     dismissed = set(db.scalars(select(Recommendation.id).join(RecommendationFeedback, RecommendationFeedback.recommendation_id == Recommendation.id)
                                .where(RecommendationFeedback.user_id == user.id, RecommendationFeedback.action == "dismissed")))

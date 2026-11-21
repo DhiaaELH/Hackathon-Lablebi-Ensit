@@ -93,6 +93,7 @@ export interface AssessmentCard {
   chapter_id: string | null;
   section_id: string | null;
   questions: number;
+  problems: number;
   quality_status: string;
   agent_role: string;
   best: { score: number; max: number } | null;
@@ -103,8 +104,13 @@ export interface AssessmentDetail {
   title: string;
   quality_status: string;
   findings: { severity: string; item: string; issue: string }[];
-  questions: { id: string; prompt: string; choices: string[]; points: number; citations: string[] }[];
+  questions: {
+    id: string; qtype: "mcq" | "open"; prompt: string; choices: string[]; points: number; citations: string[];
+    hints: string[]; difficulty: string | null; rubric_size: number; my_last: { answer: string; score: number | null; grading: OpenGradeT; at: string } | null;
+  }[];
 }
+export interface OpenGradeT { score: number; met: string[]; missing: string[]; feedback: string; misconception: string; demo?: boolean; gave_up?: boolean }
+export interface SolutionT { solution: string; rubric: string[]; citations: string[] }
 export interface Gap { concept_id: string; concept: string; because_of: string[]; evidence: string[]; confidence: string }
 export interface AttemptResult {
   attempt_id: string;
@@ -197,7 +203,7 @@ export interface ConversationT {
 }
 export interface MessagesPage { conversation: ConversationT; has_more: boolean; messages: { id: string; body: string; mine: boolean; at: string; sender: string }[] }
 export interface GroupT { id: string; title: string; members: number; exam_date: string | null; joined: boolean }
-export interface RecItem { id: string; type: "concept" | "section" | "course"; reason: string; score: number; saved: boolean; course_id: string; section_id?: string | null; title: string }
+export interface RecItem { id: string; type: "concept" | "section" | "course"; reason: string; reason_code?: string; reason_args?: Record<string, string | number>; score: number; saved: boolean; course_id: string; section_id?: string | null; title: string }
 export interface Recs { items: RecItem[]; settings: { review: boolean; next_steps: boolean; library: boolean }; how: string }
 export interface GlossaryTermT { id: string; term_fr: string; term_ar: string | null; term_derja: string | null; term_en: string | null; explanation: string; example: string | null; review_state: string; contributor: string }
 export interface SharedT { id: string; kind: string; title: string; body: string | null; url: string | null; author: string; helpful: number; not_helpful: number; my_rating: boolean | null; mine: boolean; at: string }
@@ -215,3 +221,4 @@ export interface DueCard { front: string; back: string; kind: string; citations:
 export interface DueCards { due: DueCard[]; upcoming: number; total: number; next_due: string | null }
 export interface QueueItem { course_id: string; course: string; chapter_id: string; chapter: string; section_id: string; section: string; students: number; top_reason: string | null }
 export interface ReportT { id: string; target_type: string; target_id: string; reason: string; status: string; preview: string | null; at: string }
+export interface Suggestion extends PublicProfile { reason: string; reasons: { code: string; args: Record<string, string | number> }[]; score: number }

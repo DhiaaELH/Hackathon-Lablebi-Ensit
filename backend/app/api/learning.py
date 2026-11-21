@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -11,6 +11,7 @@ from ..agents import roles
 from ..db import get_db
 from ..models import (
     AgentArtifact,
+    Course,
     Assessment,
     Attempt,
     Chapter,
@@ -45,9 +46,10 @@ def list_assessments(course_id: uuid.UUID, user=Depends(current_user), db: Sessi
     out = []
     for a in db.scalars(select(Assessment).where(Assessment.course_id == course_id).order_by(Assessment.kind, Assessment.created_at)):
         best = db.scalars(select(Attempt).where(Attempt.assessment_id == a.id, Attempt.user_id == user.id).order_by(Attempt.score.desc())).first()
-        n = len(db.scalars(select(Question.id).where(Question.assessment_id == a.id)).all())
+        kinds = db.scalars(select(Question.qtype).where(Question.assessment_id == a.id)).all()
+        n, n_open = sum(1 for k in kinds if k != "open"), sum(1 for k in kinds if k == "open")
         out.append({"id": str(a.id), "kind": a.kind, "title": a.title, "chapter_id": str(a.chapter_id) if a.chapter_id else None,
-                    "section_id": str(a.section_id) if a.section_id else None, "questions": n, "quality_status": a.quality_status,
+                    "section_id": str(a.section_id) if a.section_id else None, "questions": n, "problems": n_open, "quality_status": a.quality_status,
                     "agent_role": a.agent_role, "best": {"score": best.score, "max": best.max_score} if best else None})
     return out
 
@@ -58,7 +60,73 @@ def get_assessment(assessment_id: uuid.UUID, user=Depends(current_user), db: Ses
     a = _assessment(db, user, assessment_id)
     qs = db.scalars(select(Question).where(Question.assessment_id == a.id).order_by(Question.ordinal)).all()
     return {"id": str(a.id), "kind": a.kind, "title": a.title, "quality_status": a.quality_status, "findings": a.findings,
-            "questions": [{"id": str(q.id), "prompt": q.prompt, "choices": q.choices, "points": q.points, "citations": q.citations} for q in qs]}
+            "questions": [{"id": str(q.id), "qtype": q.qtype, "prompt": q.prompt, "choices": q.choices, "points": q.points, "citations": q.citations,
+                           "hints": q.hints if q.qtype == "open" else [], "difficulty": q.difficulty,
+                           "rubric_size": len(q.rubric or []), "my_last": _last_open(db, user.id, q.id) if q.qtype == "open" else None} for q in qs]}
+
+
+def _last_open(db: Session, user_id, qid) -> dict | None:
+    from ..models import OpenAnswer
+
+    a = db.scalars(select(OpenAnswer).where(OpenAnswer.user_id == user_id, OpenAnswer.question_id == qid).order_by(OpenAnswer.created_at.desc())).first()
+    return {"answer": a.answer, "score": a.score, "grading": a.grading, "at": a.created_at.isoformat()} if a else None
+
+
+class OpenAnswerIn(BaseModel):
+    answer: str = Field(min_length=1, max_length=8000)
+    hints_used: int = Field(default=0, ge=0, le=10)
+    language: Literal["fr", "en", "ar", "derja"] | None = None
+
+
+def _open_question(db: Session, user, qid: uuid.UUID) -> tuple[Question, Assessment]:
+    q = db.get(Question, qid)
+    if not q or q.qtype != "open":
+        raise HTTPException(404, "Exercise not found")
+    a = db.get(Assessment, q.assessment_id)
+    get_readable_course(db, user, a.course_id)
+    return q, a
+
+
+@router.post("/questions/{qid}/open-answer", dependencies=[Depends(rate_limit("open_answer", 12, 60))])
+def submit_open(qid: uuid.UUID, body: OpenAnswerIn, user=Depends(current_user), db: Session = Depends(get_db)):
+    from ..llm.provider import LLMError
+    from ..models import ConceptProgress, OpenAnswer
+
+    q, a = _open_question(db, user, qid)
+    course = db.get(Course, a.course_id)
+    try:
+        grading, demo = roles.grade_open(db, course, {"prompt": q.prompt, "rubric": q.rubric, "solution": q.answer_text or ""}, body.answer,
+                                         body.language or user.profile.locale, user.profile.derja_script)
+    except LLMError as e:
+        raise HTTPException(503, f"Grading is unavailable right now ({e}). Your answer was not lost; try again.")
+    grading["demo"] = demo
+    db.add(OpenAnswer(user_id=user.id, question_id=q.id, answer=body.answer, score=grading["score"], grading=grading, hints_used=body.hints_used))
+    if q.concept_id:
+        cp = db.get(ConceptProgress, (user.id, q.concept_id))
+        if cp is None:
+            db.add(ConceptProgress(user_id=user.id, concept_id=q.concept_id, correct=int(grading["score"] >= 60), total=1))
+        else:
+            cp.correct += int(grading["score"] >= 60)
+            cp.total += 1
+    db.add(ProgressEvent(user_id=user.id, course_id=a.course_id, kind="open_answer", ref_id=str(q.id),
+                         data={"score": grading["score"], "hints_used": body.hints_used}))
+    db.commit()
+    return {**grading, "solution_available": True}
+
+
+@router.get("/questions/{qid}/solution")
+def open_solution(qid: uuid.UUID, give_up: bool = False, user=Depends(current_user), db: Session = Depends(get_db)):
+    """Worked solution + rubric, only after the student answered (or explicitly gave up)."""
+    from ..models import OpenAnswer
+
+    q, a = _open_question(db, user, qid)
+    answered = db.scalar(select(OpenAnswer.id).where(OpenAnswer.user_id == user.id, OpenAnswer.question_id == q.id))
+    if not answered:
+        if not give_up:
+            raise HTTPException(400, "Try the exercise first (or choose to see the solution)")
+        db.add(OpenAnswer(user_id=user.id, question_id=q.id, answer="", score=None, grading={"gave_up": True}))
+        db.commit()
+    return {"solution": q.answer_text, "rubric": q.rubric, "citations": q.citations}
 
 
 class AttemptIn(BaseModel):

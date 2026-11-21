@@ -15,6 +15,11 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..models import (
     Block,
+    Course,
+    CourseMember,
+    ProfileSuggestionDismissal,
+    StudentPreferences,
+    Thread,
     Conversation,
     ConversationParticipant,
     Follow,
@@ -81,6 +86,66 @@ def search_users(q: str = "", me=Depends(current_user), db: Session = Depends(ge
                                             or_(func.lower(Profile.username).like(like), func.lower(Profile.display_name).like(like)))
                       .order_by(Profile.display_name).limit(20)).all()
     return [_public(db, me, p) for p in rows]
+
+
+# ---------------------------------------------------------------- "who to follow" suggestions
+_WORD = __import__("re").compile(r"[\w\u0600-\u06FF]{4,}")
+
+
+@router.get("/users/suggestions")
+def suggestions(me=Depends(current_user), db: Session = Depends(get_db)):
+    """Transparent rule-based people suggestions, each with a reason. Privacy:
+    only searchable profiles; never blocked (either way), already-followed or dismissed users; a 'followed by'
+    reason only names people who chose to show their follows; private interests are never revealed (only the
+    candidate's public bio is matched against my interests)."""
+    my_courses = set(db.scalars(select(CourseMember.course_id).where(CourseMember.user_id == me.id))) | set(
+        db.scalars(select(Course.id).where(Course.owner_id == me.id)))
+    following = set(db.scalars(select(Follow.followee_id).where(Follow.follower_id == me.id)))
+    blocked = set(db.scalars(select(Block.blocked_id).where(Block.blocker_id == me.id))) | set(
+        db.scalars(select(Block.blocker_id).where(Block.blocked_id == me.id)))
+    dismissed = set(db.scalars(select(ProfileSuggestionDismissal.target_id).where(ProfileSuggestionDismissal.user_id == me.id)))
+    prefs = db.get(StudentPreferences, me.id)
+    my_words = {w.lower() for t in ((prefs.interests or []) + (prefs.current_subjects or []) if prefs else []) for w in _WORD.findall(t)}
+    exclude = following | blocked | dismissed | {me.id}
+    candidates = db.scalars(select(Profile).where(Profile.searchable.is_(True), Profile.user_id.not_in(exclude or {uuid.uuid4()}))).all()
+    out = []
+    for p in candidates:
+        score, reasons, codes = 0.0, [], []
+        shared = set(db.scalars(select(CourseMember.course_id).where(CourseMember.user_id == p.user_id))) & my_courses
+        if shared:
+            score += 2 * len(shared)
+            title = db.get(Course, next(iter(shared))).title.replace("[DÉMO] ", "")
+            reasons.append(f"Also in {title}" + (f" (+{len(shared) - 1} more course)" if len(shared) > 1 else ""))
+            codes.append({"code": "shared_course", "args": {"course": title, "more": len(shared) - 1}})
+        helpful = db.scalar(select(func.count()).select_from(Post).join(Thread, Thread.id == Post.thread_id).where(
+            Post.author_id == p.user_id, Post.accepted.is_(True), Thread.course_id.in_(my_courses or {uuid.uuid4()}))) or 0
+        if p.role == "senior" or helpful:
+            score += 3 + helpful
+            reasons.append(f"Peer tutor in your courses" + (f" · {helpful} accepted answer{'s' if helpful > 1 else ''}" if helpful else ""))
+            codes.append({"code": "peer_tutor", "args": {"answers": helpful}})
+        via = db.scalars(select(Profile).join(Follow, Follow.follower_id == Profile.user_id).where(
+            Follow.followee_id == p.user_id, Follow.follower_id.in_(following or {uuid.uuid4()}), Profile.show_follows.is_(True))).all()
+        if via:
+            score += 1.5 * len(via)
+            reasons.append("Followed by " + ", ".join(v.display_name for v in via[:2]))
+            codes.append({"code": "followed_by", "args": {"names": ", ".join(v.display_name for v in via[:2])}})
+        overlap = my_words & {w.lower() for w in _WORD.findall(p.bio or "")}
+        if overlap:
+            score += len(overlap)
+            reasons.append("Bio mentions " + ", ".join(sorted(overlap)[:2]))
+            codes.append({"code": "bio_match", "args": {"words": ", ".join(sorted(overlap)[:2])}})
+        if score > 0:
+            out.append({**_public(db, me, p), "reason": " · ".join(reasons), "reasons": codes, "score": round(score, 1)})
+    return sorted(out, key=lambda x: -x["score"])[:8]
+
+
+@router.post("/users/{username}/dismiss-suggestion")
+def dismiss_suggestion(username: str, me=Depends(current_user), db: Session = Depends(get_db)):
+    p = _profile_by_username(db, username)
+    if not db.get(ProfileSuggestionDismissal, (me.id, p.user_id)):
+        db.add(ProfileSuggestionDismissal(user_id=me.id, target_id=p.user_id))
+        db.commit()
+    return {"ok": True}
 
 
 @router.get("/users/{username}")

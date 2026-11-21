@@ -29,7 +29,7 @@ from ..models import (
 from ..retrieval.chunking import Page
 from ..security import course_access, current_user, get_owned_course, get_readable_course, rate_limit
 from ..services.ingest import add_chunks
-from ..workflows.jordan import run_workflow, start_workflow
+from ..workflows.jordan import retry_failed, run_workflow, start_workflow
 
 router = APIRouter(prefix="/api", tags=["courses"])
 
@@ -205,6 +205,27 @@ def start(course_id: uuid.UUID, background: BackgroundTasks, user=Depends(curren
     wf = start_workflow(db, course, user.id, course.language, is_demo())
     background.add_task(run_workflow, wf.id, user.profile.derja_script)
     return {"workflow_id": str(wf.id)}
+
+
+@router.post("/workflows/{wf_id}/retry", dependencies=[Depends(rate_limit("workflow", 6, 600))])
+def retry_workflow(wf_id: uuid.UUID, background: BackgroundTasks, user=Depends(current_user), db: Session = Depends(get_db)):
+    """Re-run only the agents that failed or need review (structure is kept)."""
+    wf = db.get(WorkflowRun, wf_id)
+    if not wf:
+        raise HTTPException(404, "Not found")
+    course = get_readable_course(db, user, wf.course_id)
+    if course_access(db, user, course) not in ("owner", "teacher"):
+        raise HTTPException(403, "Only the course owner or its teacher can retry")
+    if wf.status in ("queued", "running"):
+        raise HTTPException(409, "The workflow is still running")
+    failed = db.scalars(select(AgentTask).where(AgentTask.workflow_id == wf.id, AgentTask.status.in_(["failed", "needs_review"]),
+                                                AgentTask.agent_role != "clara")).all()
+    if not failed:
+        raise HTTPException(400, "Nothing to retry")
+    wf.status = "running"
+    db.commit()
+    background.add_task(retry_failed, wf.id, user.profile.derja_script)
+    return {"workflow_id": str(wf.id), "retrying": [t.agent_role for t in failed]}
 
 
 @router.get("/workflows/{wf_id}")
