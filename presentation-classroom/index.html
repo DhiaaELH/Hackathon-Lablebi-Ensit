@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LessonForge — A Day at School</title>
+  <meta name="description" content="LessonForge, told as a low-poly 3D story.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="stage" aria-label="3D scene"></canvas>
+
+  <div id="veil" aria-hidden="true"></div>
+
+  <header id="top">
+    <div id="scene-name"></div>
+    <div id="top-actions">
+      <button id="btn-lang" type="button" title="L">FR</button>
+      <button id="btn-help" type="button" title="H">?</button>
+    </div>
+  </header>
+
+  <main id="card" class="card" aria-live="polite"></main>
+
+  <div id="dive" hidden>
+    <img id="dive-img" alt="">
+    <div id="dive-hint"></div>
+  </div>
+
+  <nav id="progress" aria-label="Progress"></nav>
+  <div id="toast" hidden></div>
+  <div id="explore-badge" hidden></div>
+  <div id="debug" hidden></div>
+
+  <div id="help" hidden>
+    <div class="help-box card">
+      <h2 id="help-title"></h2>
+      <table id="help-table"></table>
+    </div>
+  </div>
+
+  <div id="loading">LessonForge…</div>
+  <section id="print" aria-hidden="true"></section>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
