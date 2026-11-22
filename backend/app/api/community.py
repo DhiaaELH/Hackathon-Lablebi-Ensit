@@ -4,11 +4,11 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..models import Chapter, ContentReport, Course, HardChapterVote, Post, Profile, Thread, Vote
+from ..models import Chapter, ContentReport, Course, CourseMember, HardChapterVote, Post, Profile, Thread, Vote
 from ..security import course_access, current_user, get_readable_course, rate_limit, role_of
 
 router = APIRouter(prefix="/api", tags=["community"])
@@ -70,6 +70,27 @@ def list_threads(chapter_id: uuid.UUID, user=Depends(current_user), db: Session 
         out.append({"id": str(t.id), "title": t.title, "body": t.body, "author": _author(db, t.author_id), "replies": n, "solved": bool(solved),
                     "pinned": t.pinned, "is_demo": t.is_demo, "at": t.created_at.isoformat()})
     return out
+
+
+@router.get("/community/feed")
+def community_feed(course_id: uuid.UUID | None = None, user=Depends(current_user), db: Session = Depends(get_db)):
+    """Latest discussions across the courses on the user's dashboard (owned or joined), most recently active first."""
+    member_ids = select(CourseMember.course_id).where(CourseMember.user_id == user.id)
+    mine = select(Course.id).where(or_(Course.owner_id == user.id, Course.id.in_(member_ids)))
+    agg = (select(Post.thread_id, func.count().label("n"), func.bool_or(Post.accepted).label("solved"),
+                  func.max(Post.created_at).label("last_at")).group_by(Post.thread_id).subquery())
+    last = func.coalesce(agg.c.last_at, Thread.created_at)
+    stmt = (select(Thread, Course.title, Chapter.title, agg.c.n, agg.c.solved, last)
+            .join(Course, Course.id == Thread.course_id).join(Chapter, Chapter.id == Thread.chapter_id)
+            .outerjoin(agg, agg.c.thread_id == Thread.id).where(Thread.course_id.in_(mine)))
+    if course_id:
+        stmt = stmt.where(Thread.course_id == course_id)
+    rows = db.execute(stmt.order_by(last.desc()).limit(80)).all()
+    return [{"id": str(t.id), "title": t.title, "body": t.body, "author": _author(db, t.author_id), "replies": int(n or 0),
+             "solved": bool(solved), "pinned": t.pinned, "is_demo": t.is_demo, "at": t.created_at.isoformat(),
+             "last_at": last_at.isoformat(), "course_id": str(t.course_id), "course_title": ctitle,
+             "chapter_id": str(t.chapter_id), "chapter_title": chtitle}
+            for t, ctitle, chtitle, n, solved, last_at in rows]
 
 
 @router.post("/chapters/{chapter_id}/threads", dependencies=[Depends(rate_limit("thread", 10, 600))])

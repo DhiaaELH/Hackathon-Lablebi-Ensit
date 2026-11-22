@@ -8,6 +8,7 @@ import { CourseSetup } from "./pages/CourseSetup";
 import { Dashboard } from "./pages/Dashboard";
 import { Library } from "./pages/Library";
 import { Notifications } from "./pages/Notifications";
+import { CommunityPage } from "./pages/CommunityPage";
 import { Settings } from "./pages/Settings";
 import { TeacherInsights } from "./pages/TeacherInsights";
 import { Messages } from "./pages/Messages";
@@ -40,6 +41,7 @@ export function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/messages/:id" element={<Messages />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/community" element={<CommunityPage />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

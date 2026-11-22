@@ -27,6 +27,10 @@ export const MORE_FR = {
   costToday: "Aujourd'hui", costMonth: "Ce mois-ci", cost30d: "30 derniers jours", costAll: "Depuis le début", costCalls: "{n} appels depuis le {date}",
   costModel: "Modèle", costCallsCol: "Appels", costIn: "Entrée", costOut: "Sortie", costCached: "En cache", costCol: "Coût",
   costUnpriced: "Pas de tarif pour : {models} (ajoute-le via LLM_PRICES).", costEmpty: "Aucun appel à l'IA enregistré pour l'instant.", costPerM: "$ / 1M jetons (entrée · sortie)",
+  communityIntro: "Les discussions de tous tes cours. Choisis un cours pour voir ses chapitres, poser une question ou rejoindre un groupe d'étude.",
+  communityCourse: "Cours", allMyCourses: "Tous mes cours", openCourse: "Ouvrir le cours",
+  communityNoCourses: "Rejoins un cours depuis la bibliothèque pour participer à sa communauté.", communityEmpty: "Aucune discussion pour l'instant.",
+  communityPickToPost: "Pour lancer une discussion, choisis d'abord un cours ci-dessus.",
 };
 
 export const MORE_EN: typeof MORE_FR = {
@@ -57,6 +61,10 @@ export const MORE_EN: typeof MORE_FR = {
   costToday: "Today", costMonth: "This month", cost30d: "Last 30 days", costAll: "All time", costCalls: "{n} calls since {date}",
   costModel: "Model", costCallsCol: "Calls", costIn: "Input", costOut: "Output", costCached: "Cached", costCol: "Cost",
   costUnpriced: "No price for: {models} (add it with LLM_PRICES).", costEmpty: "No AI calls logged yet.", costPerM: "$ / 1M tokens (input · output)",
+  communityIntro: "Discussions from all your courses. Pick a course to browse its chapters, ask a question or join a study group.",
+  communityCourse: "Course", allMyCourses: "All my courses", openCourse: "Open course",
+  communityNoCourses: "Join a course from the library to take part in its community.", communityEmpty: "No discussions yet.",
+  communityPickToPost: "To start a discussion, pick a course above first.",
 };
 
 export const MORE_AR: typeof MORE_FR = {
@@ -87,4 +95,8 @@ export const MORE_AR: typeof MORE_FR = {
   costToday: "اليوم", costMonth: "هذا الشهر", cost30d: "آخر 30 يومًا", costAll: "منذ البداية", costCalls: "{n} طلبًا منذ {date}",
   costModel: "النموذج", costCallsCol: "الطلبات", costIn: "الإدخال", costOut: "الإخراج", costCached: "مخزّن مؤقتًا", costCol: "التكلفة",
   costUnpriced: "لا يوجد سعر لـ: {models} (أضفه عبر LLM_PRICES).", costEmpty: "لا توجد طلبات ذكاء اصطناعي مسجّلة بعد.", costPerM: "$ / مليون رمز (إدخال · إخراج)",
+  communityIntro: "نقاشات كل دروسك. اختر درسًا لتصفّح فصوله أو طرح سؤال أو الانضمام إلى مجموعة مراجعة.",
+  communityCourse: "الدرس", allMyCourses: "كل دروسي", openCourse: "افتح الدرس",
+  communityNoCourses: "انضم إلى درس من المكتبة للمشاركة في مجتمعه.", communityEmpty: "لا توجد نقاشات بعد.",
+  communityPickToPost: "لبدء نقاش، اختر درسًا أعلاه أولًا.",
 };

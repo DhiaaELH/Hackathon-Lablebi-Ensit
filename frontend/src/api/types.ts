@@ -169,6 +169,7 @@ export interface NovaReply {
 export interface NovaHistoryItem { id: number; role: "user" | "assistant"; agent_role: string | null; mode: string | null; content: string; citations: string[]; demo: boolean; at: string }
 
 export interface ThreadCard { id: string; title: string; body: string; author: { display_name: string; role: Role }; replies: number; solved: boolean; pinned: boolean; is_demo: boolean; at: string }
+export interface FeedThread extends ThreadCard { last_at: string; course_id: string; course_title: string; chapter_id: string; chapter_title: string }
 export interface ThreadDetail {
   id: string;
   title: string;

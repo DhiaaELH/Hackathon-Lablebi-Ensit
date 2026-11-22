@@ -8,7 +8,7 @@ import { api } from "./client";
 import type {
   AssessmentCard, AssessmentDetail, CourseCard, CourseDetail, Health, Insights, Me, NotificationT, NovaHistoryItem,
   Progress, Projects, Revision, TeacherResponseT, ThreadCard, ThreadDetail, WorkflowStatus,
-  AdminStats, AdminUser, LlmCost, MemberT,
+  AdminStats, AdminUser, FeedThread, LlmCost, MemberT,
   ConversationT, DueCards, Suggestion, ExamList, ExamT, GlossaryTermT, GroupT, MessagesPage, PublicProfile, QueueItem, Recs, ReportT, SharedT,
 } from "./types";
 
@@ -34,6 +34,7 @@ export const qk = {
   notifications: ["notifications"] as const,
   llmStats: ["llmStats"] as const,
   llmCost: ["llmCost"] as const,
+  communityFeed: (courseId: string) => ["communityFeed", courseId] as const,
   people: (q: string) => ["people", q] as const,
   profile: (u: string) => ["profile", u] as const,
   conversations: ["conversations"] as const,
@@ -82,6 +83,8 @@ export const useNovaHistory = (courseId: string) =>
   useQuery({ queryKey: qk.nova(courseId), queryFn: () => api.get<NovaHistoryItem[]>(`/api/courses/${courseId}/nova/history`), staleTime: 30 * MIN });
 export const useThreads = (chapterId: string | null) =>
   useQuery({ queryKey: qk.threads(chapterId ?? ""), queryFn: () => api.get<ThreadCard[]>(`/api/chapters/${chapterId}/threads`), enabled: !!chapterId });
+export const useCommunityFeed = (courseId: string) =>
+  useQuery({ queryKey: qk.communityFeed(courseId), queryFn: () => api.get<FeedThread[]>(`/api/community/feed${courseId ? `?course_id=${courseId}` : ""}`) });
 export const useThread = (id: string | null) =>
   useQuery({ queryKey: qk.thread(id ?? ""), queryFn: () => api.get<ThreadDetail>(`/api/threads/${id}`), enabled: !!id });
 export const useInsights = (courseId: string | null) =>

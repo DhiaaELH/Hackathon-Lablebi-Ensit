@@ -6,7 +6,6 @@ import { Icon } from "../components/Icon";
 import { useToast } from "../components/Toast";
 import { ErrorBox, Tabs } from "../components/ui";
 import { ClassTab } from "../features/ClassTab";
-import { Community } from "../features/Community";
 import { ExamsTab } from "../features/Exams";
 import { NovaPanel, type NovaRequest } from "../features/Nova";
 import { Overview } from "../features/Overview";
@@ -19,7 +18,7 @@ import { TopicMap } from "../features/TopicMap";
 import { useI18n } from "../i18n/I18n";
 import { WorkflowProgress } from "./CourseSetup";
 
-const TABS = ["overview", "practice", "revision", "map", "resources", "exams", "projects", "progress", "community", "class"] as const;
+const TABS = ["overview", "practice", "revision", "map", "resources", "exams", "projects", "progress", "class"] as const;
 type Tab = (typeof TABS)[number];
 
 function PublishControl({ courseId, visibility }: { courseId: string; visibility: string }) {
@@ -92,6 +91,11 @@ export function CoursePage() {
   const nav = useNavigate();
   const toast = useToast();
   const urlTab = params.get("tab") as Tab | null;
+  // Community moved to its own page in the main menu: keep old ?tab=community links working.
+  const legacyCommunity = params.get("tab") === "community";
+  useEffect(() => {
+    if (legacyCommunity) nav(`/community?course=${id}${params.get("chapter") ? `&chapter=${params.get("chapter")}` : ""}`, { replace: true });
+  }, [legacyCommunity, id, params, nav]);
   const [tab, setTabState] = useState<Tab>(urlTab && TABS.includes(urlTab) ? urlTab : "overview");
   const [focusSection, setFocusSection] = useState<string | null>(params.get("section"));
   const [novaReq, setNovaReq] = useState<NovaRequest | null>(null);
@@ -142,7 +146,7 @@ export function CoursePage() {
   const pct = progress.data?.sections_total ? Math.round((progress.data.sections_done / progress.data.sections_total) * 100) : 0;
   const labels: Record<Tab, [string, string]> = {
     overview: [t("overview"), "book"], practice: [t("practice"), "wand"], revision: [t("revision"), "layers"], map: [t("map"), "map"],
-    resources: [t("resourcesTab"), "link"], exams: [t("exams"), "file"], projects: [t("projects"), "compass"], progress: [t("progress"), "pulse"], community: [t("community"), "users"], class: [t("classTab"), "shield"],
+    resources: [t("resourcesTab"), "link"], exams: [t("exams"), "file"], projects: [t("projects"), "compass"], progress: [t("progress"), "pulse"], class: [t("classTab"), "shield"],
   };
   // A course is a classroom for the teachers who own or co-teach it.
   const canTeach = (me.data?.role === "teacher" || me.data?.role === "admin") && (c.access === "owner" || c.access === "teacher");
@@ -200,7 +204,6 @@ export function CoursePage() {
           {shown === "exams" && <ExamsTab course={c} />}
           {shown === "projects" && <ProjectsTab course={c} />}
           {shown === "progress" && <ProgressTab course={c} />}
-          {shown === "community" && <Community course={c} initialChapter={params.get("chapter")} />}
           {shown === "class" && <ClassTab course={c} />}
         </div>
         <div className={`nova-dock${novaOpen ? " open" : ""}${novaOpen && novaFull ? " full" : ""}`}>

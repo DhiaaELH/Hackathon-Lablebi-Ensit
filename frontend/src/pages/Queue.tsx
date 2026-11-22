@@ -25,7 +25,7 @@ export function Queue() {
             </div>
             <div className="row">
               <Link className="btn btn-sm btn-primary" to={`/courses/${i.course_id}?section=${i.section_id}`}>{t("open")}</Link>
-              <Link className="btn btn-sm" to={`/courses/${i.course_id}?tab=community&chapter=${i.chapter_id}`}>{t("answerInCommunity")}</Link>
+              <Link className="btn btn-sm" to={`/community?course=${i.course_id}&chapter=${i.chapter_id}`}>{t("answerInCommunity")}</Link>
             </div>
           </div>
         ))}

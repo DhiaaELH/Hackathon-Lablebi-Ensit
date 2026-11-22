@@ -10,7 +10,7 @@ import { useI18n } from "../i18n/I18n";
 import { Rich } from "../components/Rich";
 import { texToPlain } from "../components/Rich";
 
-function ThreadView({ id, onBack }: { id: string; onBack: () => void }) {
+export function ThreadView({ id, onBack }: { id: string; onBack: () => void }) {
   const { t } = useI18n();
   const th = useThread(id);
   const invalidate = useInvalidate();

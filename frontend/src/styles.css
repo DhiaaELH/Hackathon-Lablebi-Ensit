@@ -596,3 +596,9 @@ input, textarea, select { font-size: max(1rem, 16px); } /* 16px+ stops iOS from 
   .btn-icon { min-width: 44px; }
   .qdot { width: 44px; height: 44px; }
 }
+
+/* ---------- community page (main menu) ---------- */
+.feed-course, .feed-thread { appearance: none; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: start; cursor: pointer; }
+.feed-course { color: var(--muted); font-size: 0.8rem; }
+.feed-course:hover, .feed-thread:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.feed-thread strong { font-size: 1.08rem; }
