@@ -535,18 +535,23 @@ export function ground(color = C.sand, r = 70) {
 }
 
 /** Simple low-poly city ring (white Tunis houses, blue doors, palms): 1 draw call. */
-export function city(rIn = 16, rOut = 46, n = 46, seed = 3) {
+export function city(rIn = 16, rOut = 46, n = 46, seed = 3, skip = null) {
   let s = seed;
   const r = () => ((s = (s * 16807) % 2147483647) & 0xffff) / 0xffff;
   return part((b) => {
     for (let i = 0; i < n; i++) {
       const a = r() * Math.PI * 2, d = rIn + r() * (rOut - rIn);
       const w = 2.5 + r() * 2.5, h = 2 + r() * 3.5, dd = 2.5 + r() * 2.5;
-      b.use((x) => F.house(x, w, h, dd, r() > 0.25 ? C.tunisBlue : 0x3aa0a0), Math.cos(a) * d, 0, Math.sin(a) * d, r() * 6.28);
+      const door = r() > 0.25 ? C.tunisBlue : 0x3aa0a0, ry = r() * 6.28;
+      // skip(x, z): leave a zone empty (e.g. where another place stands)
+      if (skip && skip(Math.cos(a) * d, Math.sin(a) * d)) continue;
+      b.use((x) => F.house(x, w, h, dd, door), Math.cos(a) * d, 0, Math.sin(a) * d, ry);
     }
     for (let i = 0; i < 14; i++) {
       const a = r() * Math.PI * 2, d = rIn - 3 + r() * (rOut - rIn);
-      b.use(F.palm, Math.cos(a) * d, 0, Math.sin(a) * d, r() * 6, 0.9 + r() * 0.6);
+      const ry = r() * 6, sc = 0.9 + r() * 0.6;
+      if (skip && skip(Math.cos(a) * d, Math.sin(a) * d)) continue;
+      b.use(F.palm, Math.cos(a) * d, 0, Math.sin(a) * d, ry, sc);
     }
   });
 }

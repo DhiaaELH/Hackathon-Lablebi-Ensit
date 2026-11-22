@@ -21,7 +21,9 @@ export function classroom(S, o = {}) {
   reseed(11);
   const R = { students: [], people: [] };
   S.add(ground(C.sand));
-  if (o.city !== false) S.add(city(22, 60, 54));
+  // no houses right behind the back wall: the backstage workshop stands there (x -8..10, z -6..-23),
+  // and both places are on screen together during the flight between them
+  if (o.city !== false) S.add(city(22, 60, 54, 3, (x, z) => z < -3 && z > -30 && x > -14 && x < 16));
 
   S.add(part((b) => {
     b.box(16, 0.3, 12, C.floor, 0, -0.15, 0);

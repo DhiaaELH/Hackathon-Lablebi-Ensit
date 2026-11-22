@@ -70,6 +70,9 @@ export default {
     bots.finder.visible = false;
     tags.finder.visible = false;
 
+    const OTHERS = ['clara', 'quinn', 'alex', 'sage', 'max', 'riley'];
+
+
     // Jordan's task board + "plain code" note
     const board = label(`${S.L('TÂCHES', 'TASKS')}\n1 · Clara\n2 · Quinn  Alex  Sage  Max\n3 · Riley`, { w: 2.5, h: 1.3, bg: '#fdfbf7', size: 0.62 });
     board.position.set(5.6, 4.6, -9.1);
@@ -155,7 +158,9 @@ export default {
         cam: [7.7, 2.9, -2.9, 6.5, 2.9, -9],
         run() {
           // Jordan's close-up: keep the neighbours out of the corner of the frame
-          S.call(0.5, () => { for (const n of ['riley', 'max', 'sage']) tags[n].visible = false; bots.riley.visible = false; bots.max.visible = false; });
+          // (shrunk away at once, so nothing sweeps past the camera while it moves in)
+          for (const n of OTHERS) S.hide(tags[n], 0, 0.18);
+          for (const n of ['riley', 'max', 'sage']) S.hide(bots[n], 0, 0.18);
           work(['jordan'], 0.6);
           S.pop(board, 0.4);
           S.pop(code, 1.0);
@@ -164,9 +169,8 @@ export default {
       {
         cam: [-5.2, 3.3, 3.2, -3.7, 1.2, -4],
         run() {
-          for (const n of ['riley', 'max', 'sage']) tags[n].visible = true;
-          bots.riley.visible = true;
-          bots.max.visible = true;
+          for (const n of OTHERS) S.pop(tags[n], 0.5, 1, 0.35);
+          for (const n of ['riley', 'max', 'sage']) S.pop(bots[n], 0.5, 1.25, 0.35);
           work(['jordan'], 0.15);
           work(['clara'], 1);
           chapters.forEach((m, i) => {
