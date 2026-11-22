@@ -239,17 +239,18 @@ export interface LlmCost {
   by_model: LlmCostModel[]; daily: { day: string; cost_usd: number }[];
 }
 export interface LevelT { level: number; xp: number; level_start: number; next_level_at: number }
-export interface ChallengeSubmissionT { id: string; score: number; passed: boolean; xp_awarded: number; answer: string; link: string | null; grading: OpenGradeT; at: string }
+export interface ChallengeSubmissionT { id: string; status: "graded" | "pending"; score: number; passed: boolean; xp_awarded: number; answer: string; link: string | null; grading: OpenGradeT; at: string }
 export interface ChallengeT {
   id: string; course_id: string; course_title: string; chapter_id: string | null; chapter_title: string | null;
-  kind: "task" | "project"; title: string; instructions: string; criteria: string[]; xp: number; due_at: string | null; created_at: string;
+  kind: "task" | "project"; grading_mode: "ai" | "manual"; title: string; instructions: string; criteria: string[]; xp: number; due_at: string | null; created_at: string;
   author: { display_name: string; role: Role }; mine: boolean; can_manage: boolean; attempts: number; attempts_left: number;
-  best_score: number | null; passed: boolean; xp_earned: number; my_submissions: ChallengeSubmissionT[]; submissions_count: number | null;
+  best_score: number | null; passed: boolean; xp_earned: number; pending: boolean; my_submissions: ChallengeSubmissionT[];
+  submissions_count: number | null; pending_count: number | null;
 }
 export interface ChallengeList { me: LevelT & { passed: number }; can_publish: boolean; pass_score: number; max_attempts: number; challenges: ChallengeT[] }
-export interface ChallengeResult extends OpenGradeT { passed: boolean; xp_awarded: number; xp_gained: number; attempts_left: number; me: LevelT }
+export interface ChallengeResult extends OpenGradeT { pending: boolean; passed: boolean; xp_awarded: number; xp_gained: number; attempts_left: number; me: LevelT }
 export interface PublishableCourse { id: string; title: string; chapters: { id: string; title: string }[] }
 export interface LeaderRow { rank: number | null; me: boolean; display_name: string | null; username: string | null; role: Role; xp: number; passed: number; level: number }
 export interface Leaderboard { top: LeaderRow[]; me: LeaderRow; players: number }
-export interface ChallengeSubmissionAdmin { id: string; student: { display_name: string; role: Role }; score: number; passed: boolean; xp_awarded: number; answer: string; link: string | null; feedback: string; at: string }
+export interface ChallengeSubmissionAdmin { id: string; student: { display_name: string; role: Role }; status: "graded" | "pending"; reviewed_by: string | null; score: number; passed: boolean; xp_awarded: number; answer: string; link: string | null; feedback: string; at: string }
 export interface AdminStats { users: Record<Role, number>; courses: number; published: number; attempts: number; open_reports: number }

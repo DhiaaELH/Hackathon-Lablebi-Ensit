@@ -2,6 +2,8 @@
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS hints jsonb NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS rubric jsonb NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS difficulty varchar(12);
+ALTER TABLE challenges ADD COLUMN IF NOT EXISTS grading_mode varchar(10) NOT NULL DEFAULT 'ai';
+ALTER TABLE challenge_submissions ADD COLUMN IF NOT EXISTS status varchar(10) NOT NULL DEFAULT 'graded';
 
 -- Applied after SQLAlchemy create_all. Idempotent.
 

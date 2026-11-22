@@ -48,6 +48,12 @@ export const MORE_FR = {
   chChapterOpt: "Chapitre (facultatif)", chKind: "Type", chReward: "Récompense", chInstructions: "Consignes",
   chCriteriaHint: "Un critère par ligne, par ex.\nExplique la différence entre loi et espérance\nDonne un exemple chiffré", chCriteriaNote: "1 à 8 critères. L'IA s'en sert pour noter.",
   chDue: "Date limite (facultatif)", chPublishBtn: "Publier le défi", chPublished: "Défi publié",
+  chModeAi: "Correction IA", chModeManual: "Correction manuelle", chPending: "En attente de correction", chToReview: "à corriger",
+  chSentForReview: "Envoyé ! En attente de correction.", chPendingNote: "Ton travail sera corrigé par la personne qui a publié le défi ; tu recevras une notification.",
+  chHowGradedManual: "Corrigé à la main par la personne qui a publié le défi. Réussi à partir de {pass} % ; l'XP gagnée est proportionnelle à la note.",
+  chAiGrades: "L'IA corrige et donne l'XP automatiquement", chAiGradesOn: "Les élèves reçoivent leur note et leur XP tout de suite. Tu peux toujours corriger une note de l'IA.",
+  chAiGradesOff: "Correction manuelle : chaque travail t'attend dans « Soumissions » ; tu donnes une note sur 100 et l'XP suit.",
+  chScore: "Note", chFeedback: "Commentaire pour l'élève (facultatif)", chValidate: "Valider la note", chReGrade: "Corriger la note",
 };
 
 export const MORE_EN: typeof MORE_FR = {
@@ -99,6 +105,12 @@ export const MORE_EN: typeof MORE_FR = {
   chChapterOpt: "Chapter (optional)", chKind: "Type", chReward: "Reward", chInstructions: "Instructions",
   chCriteriaHint: "One criterion per line, e.g.\nExplains the difference between distribution and expectation\nGives a worked numeric example", chCriteriaNote: "1 to 8 criteria. The AI uses them to grade.",
   chDue: "Due date (optional)", chPublishBtn: "Publish challenge", chPublished: "Challenge published",
+  chModeAi: "AI grading", chModeManual: "Manual grading", chPending: "Waiting for review", chToReview: "to review",
+  chSentForReview: "Sent! Waiting for review.", chPendingNote: "The person who published this challenge will grade your work; you will get a notification.",
+  chHowGradedManual: "Graded by hand by the person who published the challenge. Passed from {pass}%; XP earned is proportional to the score.",
+  chAiGrades: "AI grades it and gives the XP automatically", chAiGradesOn: "Students get their score and XP right away. You can still change an AI grade.",
+  chAiGradesOff: "Manual grading: every submission waits for you under “Submissions”; you give a score out of 100 and the XP follows.",
+  chScore: "Score", chFeedback: "Comment for the student (optional)", chValidate: "Save grade", chReGrade: "Change grade",
 };
 
 export const MORE_AR: typeof MORE_FR = {
@@ -150,4 +162,10 @@ export const MORE_AR: typeof MORE_FR = {
   chChapterOpt: "الفصل (اختياري)", chKind: "النوع", chReward: "المكافأة", chInstructions: "التعليمات",
   chCriteriaHint: "معيار في كل سطر", chCriteriaNote: "من 1 إلى 8 معايير. يعتمدها الذكاء الاصطناعي في التصحيح.",
   chDue: "آخر أجل (اختياري)", chPublishBtn: "انشر التحدي", chPublished: "تم نشر التحدي",
+  chModeAi: "تصحيح بالذكاء الاصطناعي", chModeManual: "تصحيح يدوي", chPending: "في انتظار التصحيح", chToReview: "للتصحيح",
+  chSentForReview: "تم الإرسال! في انتظار التصحيح.", chPendingNote: "سيصحّح عملك من نشر التحدي، وستصلك إشعار.",
+  chHowGradedManual: "يُصحَّح يدويًا من طرف من نشر التحدي. النجاح ابتداءً من {pass}٪، ونقاط الخبرة تتناسب مع العلامة.",
+  chAiGrades: "الذكاء الاصطناعي يصحّح ويمنح نقاط الخبرة تلقائيًا", chAiGradesOn: "يحصل الطلبة على علامتهم ونقاطهم فورًا. يمكنك دائمًا تعديل علامة الذكاء الاصطناعي.",
+  chAiGradesOff: "تصحيح يدوي: كل إرسال ينتظرك في «الإرسالات»؛ تعطي علامة من 100 وتُمنح النقاط تبعًا لها.",
+  chScore: "العلامة", chFeedback: "تعليق للطالب (اختياري)", chValidate: "حفظ العلامة", chReGrade: "تعديل العلامة",
 };

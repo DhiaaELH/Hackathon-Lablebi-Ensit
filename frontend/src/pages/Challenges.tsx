@@ -94,6 +94,9 @@ function ChallengeCard({ c, open, onToggle, passScore }: { c: ChallengeT; open: 
       </div>
       <div className="row small">
         <span className="badge">{t(c.kind === "project" ? "chProject" : "chTask")}</span>
+        <span className="badge"><Icon name={c.grading_mode === "ai" ? "spark" : "check"} size={12} /> {t(c.grading_mode === "ai" ? "chModeAi" : "chModeManual")}</span>
+        {c.pending && <span className="badge badge-warning"><Icon name="clock" size={12} /> {t("chPending")}</span>}
+        {c.can_manage && !!c.pending_count && <span className="badge badge-warning">{c.pending_count} {t("chToReview")}</span>}
         {c.passed && <span className="badge badge-success"><Icon name="check" size={12} /> {c.best_score}% · +{c.xp_earned} XP</span>}
         {!c.passed && c.best_score !== null && <span className="badge badge-warning">{c.best_score}%</span>}
         {c.due_at && <span className={`badge${closed ? " badge-error" : ""}`}><Icon name="calendar" size={12} /> {new Date(c.due_at).toLocaleDateString(locale)}</span>}
@@ -126,7 +129,7 @@ function ChallengeDetail({ c, closed, passScore }: { c: ChallengeT; closed: bool
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<ChallengeResult | null>(null);
   const [subs, setSubs] = useState<ChallengeSubmissionAdmin[] | null>(null);
-  const canSubmit = !c.mine && !closed && c.attempts_left > 0 && !(c.passed && c.best_score === 100);
+  const canSubmit = !c.mine && !closed && !c.pending && c.attempts_left > 0 && !(c.passed && c.best_score === 100);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -136,7 +139,8 @@ function ChallengeDetail({ c, closed, passScore }: { c: ChallengeT; closed: bool
       setResult(r);
       setAnswer("");
       setLink("");
-      if (r.xp_gained > 0) toast(`+${r.xp_gained} XP · ${t("chLevel")} ${r.me.level}`);
+      if (r.pending) toast(t("chSentForReview"));
+      else if (r.xp_gained > 0) toast(`+${r.xp_gained} XP · ${t("chLevel")} ${r.me.level}`);
       invalidate([...qk.challenges], [...qk.leaderboard]);
     } catch (err) {
       toast((err as Error).message === "timeout" ? t("novaTimeout") : (err as Error).message, "err");
@@ -157,9 +161,10 @@ function ChallengeDetail({ c, closed, passScore }: { c: ChallengeT; closed: bool
       <div>
         <div className="sec-label">{t("chCriteria")}</div>
         <ul className="grade-list">{c.criteria.map((x, i) => <li key={i}><Icon name="target" size={13} /> <Rich text={x} /></li>)}</ul>
-        <span className="tiny muted">{t("chHowGraded").replace("{pass}", String(passScore))}</span>
+        <span className="tiny muted">{t(c.grading_mode === "ai" ? "chHowGraded" : "chHowGradedManual").replace("{pass}", String(passScore))}</span>
       </div>
-      {result && (
+      {result?.pending && <div className="alert stack"><strong>{t("chSentForReview")}</strong><span className="small">{t("chPendingNote")}</span></div>}
+      {result && !result.pending && (
         <div className={`alert ${result.passed ? "alert-success" : "alert-warning"} stack`}>
           <strong>{result.score}% · {result.passed ? `${t("chPassed")} · +${result.xp_gained} XP` : t("chNotYet")}</strong>
           <GradeView g={result} />
@@ -185,15 +190,17 @@ function ChallengeDetail({ c, closed, passScore }: { c: ChallengeT; closed: bool
           </div>
         </form>
       )}
-      {!canSubmit && !c.mine && !c.passed && <span className="small muted">{closed ? t("chClosed") : t("chNoAttempts")}</span>}
+      {!canSubmit && !c.mine && !c.passed && !c.pending && <span className="small muted">{closed ? t("chClosed") : t("chNoAttempts")}</span>}
+      {c.pending && !result && <span className="small muted"><Icon name="clock" size={13} /> {t("chPendingNote")}</span>}
       {c.my_submissions.length > 0 && !result && (
         <details className="outline">
           <summary>{t("chMyAttempts")} ({c.my_submissions.length})</summary>
           <div className="stack" style={{ padding: "0.6rem 0.9rem" }}>
             {c.my_submissions.map((s) => (
               <div key={s.id} className="stack" style={{ gap: "0.3rem" }}>
-                <strong className="small">{s.score}% {s.passed ? `· +${s.xp_awarded} XP` : ""}</strong>
-                <GradeView g={s.grading} />
+                {s.status === "pending"
+                  ? <span className="small muted"><Icon name="clock" size={13} /> {t("chPending")}</span>
+                  : <><strong className="small">{s.score}% {s.passed ? `· +${s.xp_awarded} XP` : ""}</strong><GradeView g={s.grading} /></>}
               </div>
             ))}
           </div>
@@ -209,17 +216,60 @@ function ChallengeDetail({ c, closed, passScore }: { c: ChallengeT; closed: bool
       )}
       {subs && (subs.length === 0 ? <Empty>{t("nothingHere")}</Empty> : (
         <div className="stack">
-          {subs.map((s) => (
-            <div key={s.id} className="card stack" style={{ gap: "0.3rem" }}>
-              <div className="row between"><strong>{s.student.display_name}</strong>
-                <span className={`badge ${s.passed ? "badge-success" : ""}`}>{s.score}%{s.passed ? ` · +${s.xp_awarded} XP` : ""}</span></div>
-              <Rich as="div" className="small" text={s.answer} />
-              {s.link && <a className="small" href={s.link} target="_blank" rel="noopener noreferrer nofollow">{s.link}</a>}
-              <span className="small muted">{s.feedback}</span>
-            </div>
-          ))}
+          {subs.map((s) => <SubmissionReview key={s.id} s={s} onDone={async () => {
+            setSubs(await api.get<ChallengeSubmissionAdmin[]>(`/api/challenges/${c.id}/submissions`));
+            invalidate([...qk.challenges], [...qk.leaderboard]);
+          }} />)}
         </div>
       ))}
+    </div>
+  );
+}
+
+function SubmissionReview({ s, onDone }: { s: ChallengeSubmissionAdmin; onDone: () => void }) {
+  const { t } = useI18n();
+  const toast = useToast();
+  const [editing, setEditing] = useState(s.status === "pending");
+  const [score, setScore] = useState(s.status === "pending" ? "" : String(s.score));
+  const [feedback, setFeedback] = useState(s.status === "pending" ? "" : s.feedback);
+  const [busy, setBusy] = useState(false);
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await api.post(`/api/challenge-submissions/${s.id}/review`, { score: Number(score), feedback });
+      toast(t("toastSaved"));
+      setEditing(false);
+      onDone();
+    } catch (err) { toast((err as Error).message, "err"); } finally { setBusy(false); }
+  }
+  return (
+    <div className="card stack" style={{ gap: "0.4rem" }}>
+      <div className="row between">
+        <strong>{s.student.display_name}</strong>
+        {s.status === "pending"
+          ? <span className="badge badge-warning"><Icon name="clock" size={12} /> {t("chPending")}</span>
+          : <span className={`badge ${s.passed ? "badge-success" : ""}`}>{s.score}%{s.passed ? ` · +${s.xp_awarded} XP` : ""}{s.reviewed_by ? ` · ${s.reviewed_by}` : " · IA"}</span>}
+      </div>
+      <Rich as="div" className="small" text={s.answer} />
+      {s.link && <a className="small" href={s.link} target="_blank" rel="noopener noreferrer nofollow">{s.link}</a>}
+      {!editing && s.feedback && <span className="small muted">{s.feedback}</span>}
+      {editing ? (
+        <form className="stack review-form" onSubmit={save}>
+          <div className="row">
+            <label htmlFor={`sc-${s.id}`}>{t("chScore")}</label>
+            <input id={`sc-${s.id}`} type="number" min={0} max={100} required value={score} onChange={(e) => setScore(e.target.value)} style={{ width: 110 }} />
+            <span className="small muted">/ 100</span>
+          </div>
+          <textarea aria-label={t("chFeedback")} placeholder={t("chFeedback")} value={feedback} onChange={(e) => setFeedback(e.target.value)} style={{ minHeight: 80 }} />
+          <div className="row">
+            <button className="btn btn-primary btn-sm" type="submit" disabled={busy || score === ""}><Icon name="check" size={14} /> {t("chValidate")}</button>
+            {s.status !== "pending" && <button className="btn btn-sm btn-ghost" type="button" onClick={() => setEditing(false)}>{t("cancel")}</button>}
+          </div>
+        </form>
+      ) : (
+        <button type="button" className="btn btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => setEditing(true)}><Icon name="wand" size={14} /> {t("chReGrade")}</button>
+      )}
     </div>
   );
 }
@@ -272,6 +322,7 @@ function PublishForm({ onDone }: { onDone: () => void }) {
   const [instructions, setInstructions] = useState("");
   const [criteria, setCriteria] = useState("");
   const [xp, setXp] = useState(50);
+  const [aiGrades, setAiGrades] = useState(true);
   const [due, setDue] = useState("");
   const [busy, setBusy] = useState(false);
   if (courses.isLoading) return <Spinner />;
@@ -283,7 +334,7 @@ function PublishForm({ onDone }: { onDone: () => void }) {
     setBusy(true);
     try {
       await api.post("/api/challenges", {
-        course_id: courseId, chapter_id: chapterId || null, kind, title, instructions, xp,
+        course_id: courseId, chapter_id: chapterId || null, kind, title, instructions, xp, grading_mode: aiGrades ? "ai" : "manual",
         criteria: criteria.split("\n").map((x) => x.trim()).filter(Boolean),
         due_at: due ? new Date(`${due}T23:59:59`).toISOString() : null,
       });
@@ -341,6 +392,10 @@ function PublishForm({ onDone }: { onDone: () => void }) {
         <label htmlFor="ch-crit">{t("chCriteria")}</label>
         <textarea id="ch-crit" required value={criteria} onChange={(e) => setCriteria(e.target.value)} placeholder={t("chCriteriaHint")} style={{ minHeight: 110 }} />
         <span className="tiny muted">{t("chCriteriaNote")}</span>
+      </div>
+      <div className="stack" style={{ gap: "0.2rem" }}>
+        <label className="check"><input type="checkbox" checked={aiGrades} onChange={(e) => setAiGrades(e.target.checked)} /> {t("chAiGrades")}</label>
+        <span className="tiny muted">{t(aiGrades ? "chAiGradesOn" : "chAiGradesOff")}</span>
       </div>
       <div className="field" style={{ maxWidth: 260 }}>
         <label htmlFor="ch-due">{t("chDue")}</label>

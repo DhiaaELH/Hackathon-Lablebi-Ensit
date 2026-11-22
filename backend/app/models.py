@@ -690,6 +690,7 @@ class Challenge(Base):
     instructions: Mapped[str] = mapped_column(Text)
     criteria: Mapped[list] = mapped_column(JSONB, default=list)
     xp: Mapped[int] = mapped_column(Integer, default=50)
+    grading_mode: Mapped[str] = mapped_column(String(10), default="ai")  # ai|manual
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = ts()
@@ -706,4 +707,5 @@ class ChallengeSubmission(Base):
     passed: Mapped[bool] = mapped_column(Boolean, default=False)
     xp_awarded: Mapped[int] = mapped_column(Integer, default=0)
     grading: Mapped[dict] = mapped_column(JSONB, default=dict)
+    status: Mapped[str] = mapped_column(String(10), default="graded")  # graded|pending (manual review)
     created_at: Mapped[datetime] = ts()

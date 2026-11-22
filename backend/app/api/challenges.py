@@ -1,5 +1,6 @@
 """Gamified challenges: teachers, peer tutors and admins publish tasks/projects in a course; students submit their
-work, an AI grader scores it, and passing earns XP. XP feeds levels and a global leaderboard.
+work, which is scored either by an AI grader (grading_mode "ai") or by the publisher by hand ("manual"); passing
+earns XP. Publishers can also review (override) an AI grade. XP feeds levels and a global leaderboard.
 
 Anti-farming: authors cannot submit to their own challenge, MAX_ATTEMPTS per challenge, rate-limited submissions,
 and a challenge's XP counts once per student (best passing attempt)."""
@@ -15,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from ..agents import roles
 from ..db import get_db
-from ..models import Challenge, ChallengeSubmission, Chapter, Course, Profile
+from ..models import Challenge, ChallengeSubmission, Chapter, Course, Notification, Profile
 from ..security import course_access, current_user, get_readable_course, rate_limit, readable_course_ids, role_of
 
 router = APIRouter(prefix="/api", tags=["challenges"])
@@ -77,15 +78,18 @@ def _out(db: Session, user, ch: Challenge, course_titles: dict, chapter_titles: 
     manage = _can_manage(db, user, ch)
     return {"id": str(ch.id), "course_id": str(ch.course_id), "course_title": course_titles.get(ch.course_id, ""),
             "chapter_id": str(ch.chapter_id) if ch.chapter_id else None, "chapter_title": chapter_titles.get(ch.chapter_id),
-            "kind": ch.kind, "title": ch.title, "instructions": ch.instructions, "criteria": ch.criteria, "xp": ch.xp,
+            "kind": ch.kind, "grading_mode": ch.grading_mode, "title": ch.title, "instructions": ch.instructions, "criteria": ch.criteria, "xp": ch.xp,
             "due_at": ch.due_at.isoformat() if ch.due_at else None, "created_at": ch.created_at.isoformat(),
             "author": _name(db, ch.author_id), "mine": ch.author_id == user.id, "can_manage": manage,
             "attempts": len(subs), "attempts_left": 0 if ch.author_id == user.id else max(0, MAX_ATTEMPTS - len(subs)),
-            "best_score": best.score if best else None, "passed": bool(best and best.passed), "xp_earned": best.xp_awarded if best else 0,
-            "my_submissions": [{"id": str(s.id), "score": s.score, "passed": s.passed, "xp_awarded": s.xp_awarded, "answer": s.answer,
-                                "link": s.link, "grading": s.grading, "at": s.created_at.isoformat()} for s in subs],
+            "best_score": best.score if best and best.status == "graded" else None, "passed": bool(best and best.passed),
+            "xp_earned": best.xp_awarded if best else 0, "pending": any(s.status == "pending" for s in subs),
+            "my_submissions": [{"id": str(s.id), "status": s.status, "score": s.score, "passed": s.passed, "xp_awarded": s.xp_awarded,
+                                "answer": s.answer, "link": s.link, "grading": s.grading, "at": s.created_at.isoformat()} for s in subs],
             "submissions_count": db.scalar(select(func.count()).select_from(ChallengeSubmission).where(ChallengeSubmission.challenge_id == ch.id))
-            if manage else None}
+            if manage else None,
+            "pending_count": db.scalar(select(func.count()).select_from(ChallengeSubmission).where(
+                ChallengeSubmission.challenge_id == ch.id, ChallengeSubmission.status == "pending")) if manage else None}
 
 
 @router.get("/challenges")
@@ -127,6 +131,7 @@ class ChallengeIn(BaseModel):
     instructions: str = Field(min_length=10, max_length=8000)
     criteria: list[str] = Field(min_length=1, max_length=8)
     xp: int = 50
+    grading_mode: Literal["ai", "manual"] = "ai"
     due_at: datetime | None = None
 
 
@@ -147,7 +152,7 @@ def create_challenge(body: ChallengeIn, user=Depends(current_user), db: Session 
     if not criteria:
         raise HTTPException(400, "Add at least one success criterion")
     c = Challenge(course_id=course.id, chapter_id=body.chapter_id, author_id=user.id, kind=body.kind, title=body.title.strip(),
-                  instructions=body.instructions.strip(), criteria=criteria, xp=body.xp, due_at=body.due_at)
+                  instructions=body.instructions.strip(), criteria=criteria, xp=body.xp, grading_mode=body.grading_mode, due_at=body.due_at)
     db.add(c)
     db.commit()
     return {"id": str(c.id)}
@@ -189,9 +194,17 @@ def submit(challenge_id: uuid.UUID, body: SubmissionIn, user=Depends(current_use
     prev = db.scalars(select(ChallengeSubmission).where(ChallengeSubmission.challenge_id == ch.id, ChallengeSubmission.user_id == user.id)).all()
     if len(prev) >= MAX_ATTEMPTS:
         raise HTTPException(400, f"No attempts left ({MAX_ATTEMPTS} max)")
+    if any(p.status == "pending" for p in prev):
+        raise HTTPException(400, "Your previous submission is still waiting for review")
     link = (body.link or "").strip() or None
     if link and not link.startswith(("http://", "https://")):
         raise HTTPException(400, "The link must start with http:// or https://")
+    if ch.grading_mode == "manual":
+        db.add(ChallengeSubmission(challenge_id=ch.id, user_id=user.id, answer=body.answer.strip(), link=link, status="pending"))
+        db.commit()
+        total, _ = _total_xp(db, user.id)
+        return {"pending": True, "score": 0, "met": [], "missing": [], "feedback": "", "misconception": "", "passed": False,
+                "xp_awarded": 0, "xp_gained": 0, "attempts_left": MAX_ATTEMPTS - len(prev) - 1, "me": level_for(total)}
     try:
         grading, demo = roles.grade_challenge(db, course, {"kind": ch.kind, "title": ch.title, "instructions": ch.instructions, "criteria": ch.criteria},
                                               body.answer.strip(), link, body.language or user.profile.locale, user.profile.derja_script)
@@ -205,7 +218,7 @@ def submit(challenge_id: uuid.UUID, body: SubmissionIn, user=Depends(current_use
                                passed=passed, xp_awarded=xp, grading=grading))
     db.commit()
     total, _ = _total_xp(db, user.id)
-    return {**grading, "passed": passed, "xp_awarded": xp, "xp_gained": max(0, xp - best_before),
+    return {**grading, "pending": False, "passed": passed, "xp_awarded": xp, "xp_gained": max(0, xp - best_before),
             "attempts_left": MAX_ATTEMPTS - len(prev) - 1, "me": level_for(total)}
 
 
@@ -219,8 +232,39 @@ def submissions(challenge_id: uuid.UUID, user=Depends(current_user), db: Session
     if not _can_manage(db, user, ch):
         raise HTTPException(403, "Not allowed")
     rows = db.scalars(select(ChallengeSubmission).where(ChallengeSubmission.challenge_id == ch.id).order_by(ChallengeSubmission.created_at.desc())).all()
-    return [{"id": str(s.id), "student": _name(db, s.user_id), "score": s.score, "passed": s.passed, "xp_awarded": s.xp_awarded,
-             "answer": s.answer, "link": s.link, "feedback": s.grading.get("feedback", ""), "at": s.created_at.isoformat()} for s in rows]
+    return [{"id": str(s.id), "student": _name(db, s.user_id), "status": s.status, "score": s.score, "passed": s.passed,
+             "xp_awarded": s.xp_awarded, "answer": s.answer, "link": s.link, "feedback": s.grading.get("feedback", ""),
+             "reviewed_by": s.grading.get("reviewer"), "at": s.created_at.isoformat()} for s in rows]
+
+
+class ReviewIn(BaseModel):
+    score: int = Field(ge=0, le=100)
+    feedback: str = Field(default="", max_length=4000)
+
+
+@router.post("/challenge-submissions/{submission_id}/review", dependencies=[Depends(rate_limit("challenge_review", 120, 600))])
+def review(submission_id: uuid.UUID, body: ReviewIn, user=Depends(current_user), db: Session = Depends(get_db)):
+    """Manual grade by the challenge's author, a teacher of the course or an admin: grades a pending submission
+    or overrides an AI grade. XP follows the same rule as AI grading."""
+    s = db.get(ChallengeSubmission, submission_id)
+    if not s:
+        raise HTTPException(404, "Not found")
+    ch = db.get(Challenge, s.challenge_id)
+    get_readable_course(db, user, ch.course_id)
+    if not _can_manage(db, user, ch) or s.user_id == user.id:
+        raise HTTPException(403, "Not allowed")
+    was_pending = s.status == "pending"
+    s.score = body.score
+    s.passed = body.score >= PASS_SCORE
+    s.xp_awarded = round(ch.xp * body.score / 100) if s.passed else 0
+    s.status = "graded"
+    s.grading = {"score": body.score, "met": [], "missing": [], "misconception": "", "feedback": body.feedback.strip(),
+                 "manual": True, "reviewer": user.profile.display_name}
+    db.add(Notification(user_id=s.user_id, kind="challenge_graded",
+                        title=f"{ch.title} : {body.score}%" + (f" · +{s.xp_awarded} XP" if s.passed else "")[:300],
+                        body=body.feedback.strip()[:1000], link="/challenges"))
+    db.commit()
+    return {"ok": True, "was_pending": was_pending, "score": s.score, "passed": s.passed, "xp_awarded": s.xp_awarded}
 
 
 @router.get("/leaderboard")
