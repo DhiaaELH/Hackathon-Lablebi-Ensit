@@ -1,7 +1,8 @@
-// Scene 12 — under the hood: the engine room beneath the classroom.
-// Four zones along x, one per beat: pipeline · hybrid search · three caches · models.
+// Scene 8 — under the hood: the engine room beneath the classroom (right after Nova and Sam).
+// Four zones along x, one per beat: pipeline · hybrid search · three caches · models,
+// then the architecture diagram on the far wall (the camera zooms straight into it).
 import * as THREE from 'three';
-import { C, G, part, label, glow, instanced } from '../models/kit.js';
+import { C, G, part, label, glow, instanced, screen } from '../models/kit.js';
 import { ease } from '../anim.js';
 
 const BP = { floor: 0x14315e, wall: 0x0f2750, line: 0xdfeeff, m1: 0x2a62b8, m2: 0x3f7fd6, m3: 0x5b9cf0, cyan: 0x58d8ff, pink: 0xff9ecb, yel: 0xffe27a };
@@ -59,8 +60,8 @@ export default {
 
     // ---------------- zone 1: pipeline
     const names = ['React', 'FastAPI', 'Jordan', S.L('Les rôles', 'The roles'), 'Riley', 'PostgreSQL'];
-    MX.forEach((x, i) => tag(names[i], x, i === 3 ? 2.6 : 2.3, -2, 2.1, 0.56));
-    const guard = tag(S.L('cookie · CSRF · limites', 'cookie · CSRF · rate limits'), 1.5, 3.05, -2, 3.6, 0.5, '#fff9c4', 0.56);
+    MX.forEach((x, i) => tag(names[i], x, 2.5, -2, 2.1, 0.56));
+    const guard = tag(S.L('cookie · CSRF · limites', 'cookie · CSRF · rate limits'), 1.5, 3.25, -2, 3.6, 0.5, '#fff9c4', 0.56);
     guard.visible = false;
     const NC = 10;
     const cubes = instanced(G.box(0.2, 0.2, 0.2), Array.from({ length: NC }, () => ({ p: [0, -5, 0], c: BP.yel })), { basic: true });
@@ -100,7 +101,7 @@ export default {
     tag(S.L('② le sens', '② meaning'), Z2 + 7.7, 3.5, -3.2, 2.2, 0.5, '#ffd9ea');
     const fused = tag(S.L('classements fusionnés', 'rankings fused'), Z2 + 4.8, 3.5, -3.2, 3.3, 0.5, '#fff9c4');
     fused.visible = false;
-    tag(S.L('Vos cours seulement', 'Your courses only'), Z2 + 7.4, 1.2, -1.45, 3.0, 0.5, '#fff9c4', 0.56);
+    tag(S.L('Vos cours seulement', 'Your courses only'), Z2 - 0.85, 0.95, -1.45, 2.7, 0.5, '#fff9c4', 0.56); // at the start of the fence, clear of the chunks
 
     // ---------------- zone 3: three caches
     const JC = [BP.cyan, BP.yel, BP.pink];
@@ -114,7 +115,7 @@ export default {
     S.add(jar);
     [S.L('cache de prompt', 'prompt cache'), S.L('cache de réponses', 'response cache'), S.L('cache du navigateur', 'browser cache')]
       .forEach((txt, r) => tag(txt, Z3 + 11.75, 1.2 + r * 0.95, -3, 3.3, 0.52, ['#c9f1ff', '#fff3b8', '#ffd9ea'][r]));
-    tag(S.L('IA', 'AI'), Z3 + 14.2, 2.0, -0.6, 0.9, 0.5);
+    tag(S.L('IA', 'AI'), Z3 + 13.9, 2.5, -0.6, 0.9, 0.5);
     const req = glow(G.box(0.34, 0.34, 0.34), BP.yel);
     req.position.set(Z3 + 19, 1.3, 1.0);
     req.visible = false;
@@ -143,12 +144,12 @@ export default {
     S.add(lever);
     const gem = tag('Gemini', Z4 + 8.0, 1.0, 1.3, 1.5, 0.5, '#fff9c4');
     const cla = tag('Claude', Z4 + 10.8, 1.0, 1.3, 1.5, 0.5, '#eaf3ff');
-    const demo = tag(S.L('MODE DÉMO · aucune IA n’a tourné', 'DEMO MODE · no AI ran'), Z4 + 4.6, 3.4, -3, 5.4, 0.56, '#fff9c4', 0.58);
+    const demo = tag(S.L('MODE DÉMO · aucune IA n’a tourné', 'DEMO MODE · no AI ran'), Z4 + 4.6, 3.05, -3, 5.4, 0.56, '#fff9c4', 0.58);
     demo.visible = false;
     const needle = part((b) => b.box(0.05, 0.5, 0.03, C.red, 0, 0.22, 0));
     needle.position.set(Z4 + 12, 1.7, -0.4);
     S.add(needle);
-    const meter = tag(S.L('jetons comptés', 'tokens logged'), Z4 + 12.4, 2.75, -0.5, 2.6, 0.5);
+    const meter = tag(S.L('jetons comptés', 'tokens logged'), Z4 + 12.0, 2.75, -0.5, 2.3, 0.5);
     const st = { flow: 0, conv: 0, spin: 0, tok: 0 };
 
     const tmp = new THREE.Vector3();
@@ -170,9 +171,16 @@ export default {
       needle.rotation.z = 0.9 - st.tok * 1.8 + Math.sin(t * 5) * 0.05 * st.tok;
     });
 
+    // ---------------- the architecture diagram, framed on the far wall
+    const DX = 80;
+    S.add(part((b) => b.box(6.9, 4.45, 0.12, BP.line, DX, 2.55, -4.2).box(7.1, 0.12, 0.3, BP.line, DX, 0.28, -4.1)));
+    const diagram = screen(6.6, 4.125, S.L('architecture-fr', 'architecture-en'));
+    diagram.position.set(DX, 2.55, -4.12);
+    S.add(diagram);
+
     return [
       {
-        cam: cam(5.2),
+        cam: [5.25, 5.6, 11.2, 5.25, 0.5, -2], // wide enough for all six machine labels
         run() {
           S.to(st, { flow: 1 }, 1.2, { delay: 0.8 });
           S.pop(guard, 2.0);
@@ -198,13 +206,13 @@ export default {
           S.to(req.position, { x: Z3 + 15.6 }, 1.0, { delay: 1.6 });
           S.fly(req, [Z3 + 10.6, 2.6, -1.6], 0.9, { delay: 2.8, arc: 0.4 });
           S.fly(jar, [Z3 + 10.6, 2.2, -1.6], 0.8, { delay: 3.4, arc: 0.3 });
-          S.fly(req, [Z3 + 16.4, 2.0, 0.8], 1.2, { delay: 4.5, arc: 0.5 });
-          S.fly(jar, [Z3 + 16.4, 1.6, 0.8], 1.2, { delay: 4.5, arc: 0.5 });
+          S.fly(req, [Z3 + 12.6, 1.75, 0.6], 1.2, { delay: 4.5, arc: 0.5 });
+          S.fly(jar, [Z3 + 12.6, 1.35, 0.6], 1.2, { delay: 4.5, arc: 0.5 });
           S.pop(free, 4.8);
         },
       },
       {
-        cam: cam(Z4 + 8.4),
+        cam: cam(Z4 + 7.4), // everything sits right of the text card
         dur: 1.8,
         run() {
           S.to(st, { tok: 1 }, 2.0, { delay: 1.2 });
@@ -217,6 +225,13 @@ export default {
           sw(0.6, gem, cla, 3.6);
           S.pop(demo, 4.8);
         },
+      },
+      {
+        // the zoom into the diagram starts on arrival (dive: 'auto' in scenes.js)
+        cam: [DX, 2.55, 6.2, DX, 2.55, -4.2],
+        dur: 1.6,
+        screen: diagram,
+        shot: diagram.userData.shot,
       },
     ];
     function a0(a, b) { a.scale.setScalar(1.15); b.scale.setScalar(0.9); }

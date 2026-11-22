@@ -88,15 +88,15 @@ export default {
     const sam = put(robot('sam'), 1.9, 0.3, 0.4);
     sam.rotation.y = -0.45;
     const samTag = label('Sam', { w: 0.6, h: 0.26, size: 0.7, bg: '#ffd166' });
-    samTag.position.set(0, 1.75, 0);
+    samTag.position.set(0, 1.52, 0);
     sam.add(samTag);
     const baton = put(glow(G.cyl(0.04, 0.04, 0.42), 0xff4d4d), 0.95, 1.75, 0.35);
     baton.rotation.z = 0.9;
     const relay = put(label('Nova  →  Sam', { w: 1.7, h: 0.42, bg: '#ffd6d6', size: 0.6, bold: true }), 2.65, 3.0, 0.4);
 
     // answer, cited pages, threads
-    const ans = put(label(S.L('Avant ce chapitre, il te faut :\nle binaire et les adresses IP', 'Before this chapter you need:\nbinary and IP addresses'), { w: 2.6, h: 0.8, size: 0.6 }), 3.2, 2.75, 0.4);
-    const PG = [[2.4, 'S12', false], [3.2, 'S4', false], [4.0, 'S99', true]];
+    const ans = put(label(S.L('Avant ce chapitre, il te faut :\nle binaire et les adresses IP', 'Before this chapter you need:\nbinary and IP addresses'), { w: 2.6, h: 0.8, size: 0.6 }), 3.3, 2.95, 0.4);
+    const PG = [[2.5, 'S12', false], [3.3, 'S4', false], [4.1, 'S99', true]];
     const pages = PG.map(([px, tag, fake]) => put(board(0.62, 0.8, (x, W, H) => {
       paper(x, W, H, fake ? '#ffe3e3' : '#fdfbf7');
       x.strokeStyle = '#b9b2a6'; x.lineWidth = 5;
@@ -107,9 +107,9 @@ export default {
       x.fillText(tag, W / 2, H * 0.74);
       x.fillStyle = '#ff4d4d';
       x.beginPath(); x.arc(W / 2, H * 0.07, H * 0.045, 0, 7); x.fill();
-    }), px, 3.85, 0.4));
+    }), px, 4.02, 0.4));
     const threads = PG.map(([px]) => {
-      const a = [px > 3.2 ? 3.8 : px < 3.2 ? 2.6 : 3.2, 3.15], b = [px, 3.47];
+      const a = [px > 3.3 ? 3.9 : px < 3.3 ? 2.7 : 3.3, 3.35], b = [px, 3.64];
       const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
       const m = put(glow(G.box(len, 0.03, 0.03), 0xff4d4d), (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0.42);
       m.rotation.z = Math.atan2(b[1] - a[1], b[0] - a[0]);
@@ -122,7 +122,7 @@ export default {
       const msg = S.L('Pas trouvé dans ton cours', 'Not found in your course');
       fitText(x, msg, W * 0.86, H * 0.5, '700 ');
       x.fillText(msg, W / 2, H * 0.53);
-    }), 3.2, 2.85, 0.4);
+    }), 3.2, 2.95, 0.4);
 
     // modes dial (one canvas, repainted as the pointer steps)
     const MODES = [S.L('Question', 'Ask'), S.L('Socratique', 'Socratic'), S.L('Indices', 'Hints'), S.L('Réponse', 'Answer'), S.L('Autre\nexplication', 'Alternative\nexplanation'), S.L('Explique\nmon erreur', 'Explain\nmy mistake'), S.L('Mini-leçon', 'Mini-lesson')];
@@ -151,7 +151,7 @@ export default {
       x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + Math.cos(a) * r * 0.36, cy + Math.sin(a) * r * 0.36); x.stroke();
       x.fillStyle = '#2d2d2d';
       x.beginPath(); x.arc(cx, cy, W * 0.035, 0, 7); x.fill();
-    }), 3.3, 2.9, 0.3);
+    }), 3.45, 2.85, 0.3);
 
     // four languages
     const says = SAY.map(([lang, txt, rtl, bg], i) => put(board(1.55, 0.75, (x, W, H) => {
@@ -211,7 +211,7 @@ export default {
           // the citation that is not in the course snaps off and falls
           S.hide(threads[2], 2.7, 0.15);
           S.to(pages[2].rotation, { z: -1.3 }, 0.9, { delay: 2.8, ease: ease.in });
-          S.fly(pages[2], [4.25, 1.75, 0.9], 0.9, { delay: 2.8, arc: 0, ease: ease.in });
+          S.fly(pages[2], [3.95, 1.7, 0.9], 0.9, { delay: 2.8, arc: 0, ease: ease.in });
         },
       },
       {

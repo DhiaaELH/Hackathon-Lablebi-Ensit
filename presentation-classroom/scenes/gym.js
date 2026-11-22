@@ -69,7 +69,7 @@ export default {
 
     // ---- beat 0: the challenge card
     const card = mk(label(S.L('DÉFI\nDécouper un /24\n★ 100 XP · vendredi', 'CHALLENGE\nSplit a /24\n★ 100 XP · Friday'), { w: 1.7, h: 1.25, bg: '#fff9c4', size: 0.62 }), -0.6, 2.4, -6.84, 0);
-    const crit = mk(label(S.L('Critères ✓ ✓ ✓', 'Criteria ✓ ✓ ✓'), { w: 1.5, h: 0.36, bg: '#dcf5dc', size: 0.62 }), -0.6, 3.5, -6.84, 0);
+    const crit = mk(label(S.L('Critères ✓ ✓ ✓', 'Criteria ✓ ✓ ✓'), { w: 1.5, h: 0.36, bg: '#dcf5dc', size: 0.62 }), -0.6, 3.62, -6.84, 0);
 
     // ---- beat 1: submission sheet, gauge, XP orbs
     const work = mk(label(S.L('Ma copie', 'My work'), { w: 0.5, h: 0.64, bg: '#fdfbf7', size: 0.3 }), 4.6, 1.3, -1.6, -0.3);
@@ -94,12 +94,12 @@ export default {
     // ---- beat 2: three attempt tokens
     const tokens = [0, 1, 2].map((i) => {
       const m = label(['54 %', '71 %', '82 %'][i], { w: 0.62, h: 0.62, bg: ['#e2e2e2', '#e2e2e2', '#ffd166'][i], size: 0.42 });
-      return mk(m, 3.7 + i * 0.72, 2.75 + (i === 2 ? 0.12 : 0), -1.8);
+      return mk(m, 3.55 + i * 0.86, 2.75 + (i === 2 ? 0.1 : 0), -1.8);
     });
-    const best = mk(label(S.L('le meilleur compte', 'best one counts'), { w: 1.8, h: 0.34, bg: '#fdfbf7', size: 0.62 }), 4.5, 3.4, -1.8);
+    const best = mk(label(S.L('le meilleur compte', 'best one counts'), { w: 1.8, h: 0.34, bg: '#fdfbf7', size: 0.62 }), 4.4, 3.72, -1.8);
 
     // ---- beat 3: level up
-    const star = mk(label(S.L('★ Niveau 2', '★ Level 2'), { w: 1.5, h: 0.5, bg: '#ff4d4d', fg: '#ffffff', font: 'Kalam', size: 0.66, bold: true }), 3.5, 3.7, -4.8, 0);
+    const star = mk(label(S.L('★ Niveau 2', '★ Level 2'), { w: 1.5, h: 0.5, bg: '#ff4d4d', fg: '#ffffff', font: 'Kalam', size: 0.66, bold: true }), 6.1, 3.15, -4.7, 0);
 
     // ---- beat 4: podium, one hidden name, manual grading
     const p2 = person({ top: 0x4a90d9 }), p3 = person({ style: 'hijab', top: 0x9b6bd6 });
@@ -133,6 +133,7 @@ export default {
         shot: 'challenges',
         screen: board,
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           K.pose = 'point';
           S.pop(card, 0.5);
           S.pop(crit, 1.3);
@@ -141,6 +142,7 @@ export default {
       {
         cam: look(6.2, 2.0, -2.0, 7.2, 3.0),
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           S.hide(crit);
           K.pose = 'idle';
           Y.pose = 'point';
@@ -159,6 +161,7 @@ export default {
       {
         cam: look(5.0, 2.4, -1.8, 6.4, 3.0),
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           S.hide(xpTag);
           Y.pose = 'idle';
           Y.position.y = 0;
@@ -169,6 +172,7 @@ export default {
       {
         cam: look(4.6, 2.2, -4.8, 8.2, 3.6),
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           tokens.forEach((m) => S.hide(m));
           S.hide(best);
           S.hide(score);
@@ -186,8 +190,13 @@ export default {
         shot: 'leaderboard',
         screen: board,
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           S.hide(star);
           stepLabels.forEach((l) => S.hide(l));
+          // the gauge from the grading step stands right behind the podium: clear it
+          S.hide(l60);
+          S.hide(line);
+          S.to(gst, { v: 0 }, 0.3);
           S.call(0, () => {
             board.setShot('leaderboard');
             Y.pose = 'cheer';

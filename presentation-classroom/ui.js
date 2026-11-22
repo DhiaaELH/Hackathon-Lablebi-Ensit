@@ -131,7 +131,7 @@ export class UI {
     const out = [];
     this.scenes.forEach((s, i) => {
       const sc = this.text[s.id] || {};
-      const shot = sc.shot;
+      const shot = tr(sc.shot, this.lang);
       const body = (sc.beats || []).filter((b) => b && (b.h || b.b || b.big)).map((b) =>
         `${b.h ? `<h3>${esc(tr(b.h, this.lang))}</h3>` : ''}${b.big ? `<div class="big">${esc(tr(b.big, this.lang))}</div>` : ''}${b.b ? `<ul>${b.b.map((x) => `<li>${esc(tr(x, this.lang))}</li>`).join('')}</ul>` : ''}`).join('');
       out.push(`<div class="page${shot ? '' : ' noshot'}"><div><div class="num">${STR[this.lang].scene} ${i}</div><h2>${esc(tr(sc.name, this.lang))}</h2>${body}</div>${shot ? `<img src="shots/${shot}.webp" alt="" loading="lazy">` : ''}</div>`);

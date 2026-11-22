@@ -49,8 +49,8 @@ export default {
     deck.visible = false;
     S.add(deck);
     const due = label(S.L('À revoir demain : 2 cartes', 'Due tomorrow: 2 cards'), { w: 2.0, h: 0.36, bg: '#ffd6d6', size: 0.6 });
-    due.position.set(-1.3, 2.2, 0.6);
-    due.rotation.y = FACE;
+    due.position.set(-2.86, 1.3, 0.6); // on the wall, under the planner
+    due.rotation.y = Math.PI / 2;
     due.visible = false;
     S.add(due);
 
@@ -66,12 +66,12 @@ export default {
       return r;
     });
     const formula = label('2ʰ − 2', { w: 1.1, h: 0.5, bg: '#fdfbf7', font: 'Kalam', size: 0.7, bold: true, fade: true });
-    formula.position.set(-1.5, 2.55, 0.5);
+    formula.position.set(-1.7, 3.35, 0.4);
     formula.rotation.y = FACE;
     formula.visible = false;
     S.add(formula);
     const spoken = label(S.L('« deux puissance h, moins deux »', '“two to the power h, minus two”'), { w: 2.5, h: 0.46, bg: '#fff9c4', size: 0.5 });
-    spoken.position.set(-1.25, 2.55, 0.35);
+    spoken.position.set(-1.7, 3.35, 0.35);
     spoken.rotation.y = FACE;
     spoken.visible = false;
     S.add(spoken);
@@ -109,11 +109,11 @@ export default {
     pack.visible = false;
     S.add(pack);
     const packLabel = label(S.L('Pack hors ligne', 'Offline pack'), { w: 1.2, h: 0.32, bg: '#d9ecff', size: 0.56 });
-    packLabel.position.set(-1.2, 1.95, 1.5);
+    packLabel.position.set(-1.8, 0.72, 1.9);
     packLabel.rotation.y = FACE;
     packLabel.visible = false;
     S.add(packLabel);
-    const pdf = label('PDF', { w: 0.42, h: 0.56, bg: '#fdfbf7', fg: '#c62828', font: 'Kalam', size: 0.42, bold: true });
+    const pdf = label('PDF', { w: 0.5, h: 0.6, bg: '#fdfbf7', fg: '#c62828', font: 'Kalam', size: 0.32, bold: true });
     pdf.position.set(-1.4, 1.1, 0);
     pdf.rotation.y = FACE;
     pdf.visible = false;
@@ -139,6 +139,7 @@ export default {
         shot: 'course-revision',
         screen: R.laptop,
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           R.yas.pose = 'think';
           S.to(st, { notes: 0.35 }, 0.6);
           S.pop(deck, 0);
@@ -156,6 +157,7 @@ export default {
       {
         cam: [3.1, 2.7, 4.2, -0.9, 1.75, 0.1],
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           R.yas.pose = 'idle';
           S.to(st, { wave: 1, notes: 1 }, 0.8);
           S.hide(due);
@@ -169,6 +171,7 @@ export default {
       {
         cam: [3.2, 2.9, 5.6, -0.9, 1.75, 0.3],
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           S.to(st, { wave: 0 }, 0.5, { done: () => rings.forEach((r) => { r.visible = false; }) });
           S.hide(spoken);
           R.yas.pose = 'type';
@@ -179,13 +182,14 @@ export default {
           S.hide(pack, 2.7, 0.2);
           S.pop(packLabel, 2.7);
           S.pop(pdf, 1.0);
-          S.fly(pdf, [-2.1, 1.25, 1.9], 1.2, { delay: 1.5, arc: 0.5 });
+          S.fly(pdf, [-2.1, 1.45, 1.9], 1.2, { delay: 1.5, arc: 0.5 });
         },
       },
       {
         cam: DORM_CAM,
         dur: 1.6,
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           S.hide(packLabel);
           S.hide(pdf);
           R.yas.pose = 'type';

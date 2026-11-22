@@ -11,7 +11,7 @@ const BLUE = 0x8ec5ff, RED = 0xff5a5a, GREEN = 0x74e08a, GREY = 0x7d8594;
 // [x, y, z, fr, en]
 const ISL = [
   [-2.5, 5.9, -1, 'Binaire', 'Binary'],
-  [0.3, 6.8, -2, 'Couches', 'Layers'],
+  [-0.7, 7.3, -2, 'Couches', 'Layers'],
   [0.9, 5.1, -0.5, 'Adresses IP', 'IP addresses'],
   [3.7, 5.6, -1, 'Masques', 'Masks'],
   [5.8, 4.0, 0, 'Sous-réseaux', 'Subnets'],
@@ -76,7 +76,7 @@ export default {
     const mk = (txt, o, x, y, z) => { const m = label(txt, o); m.position.set(x, y, z); m.visible = false; S.add(m); return m; };
     const quiz = mk(S.L('Quiz : 2 / 5', 'Quiz: 2 / 5'), { w: 1.3, h: 0.4, bg: '#ffd6d6', size: 0.6 }, 7.2, 3.5, 0.4);
     const q = mk('?', { w: 0.5, h: 0.6, bg: null, fg: '#ff4d4d', font: 'Kalam', size: 0.95, bold: true }, gap.x, gap.y + 0.55, gap.z + 0.2);
-    const miss = mk(S.L('Prérequis manquant', 'Missing prerequisite'), { w: 2.1, h: 0.42, bg: '#ffd6d6', size: 0.58 }, gap.x + 1.9, gap.y + 1.15, gap.z + 0.3);
+    const miss = mk(S.L('Prérequis manquant', 'Missing prerequisite'), { w: 2.1, h: 0.42, bg: '#ffd6d6', size: 0.58 }, gap.x + 0.75, gap.y + 2.2, gap.z + 0.3);
     const lesson = mk(S.L('Mini-leçon', 'Mini-lesson'), { w: 1.4, h: 0.45, bg: '#ff4d4d', fg: '#ffffff', size: 0.62, bold: true }, SMART[0], SMART[1], SMART[2] + 0.3);
     const reco = mk(S.L('Recommandé : la section suivante\ncar c’est ta prochaine non terminée', 'Recommended: the next section\nbecause it is your next unfinished one'), { w: 3.3, h: 0.85, size: 0.62 }, 7.6, 2.9, 0.6);
 
@@ -128,7 +128,7 @@ export default {
           S.hide(miss);
           S.hide(quiz);
           S.pop(lesson, 0.2);
-          S.fly(lesson, [gap.x + 0.7, gap.y + 1.25, gap.z + 0.3], 1.1, { delay: 0.2, arc: 1 });
+          S.fly(lesson, [gap.x + 0.75, gap.y + 1.9, gap.z + 0.3], 1.1, { delay: 0.2, arc: 1 });
           let j = 0;
           planks.forEach((p) => {
             if (p.tilt) S.to(p, { tilt: 0 }, 0.5, { delay: 1.3 });

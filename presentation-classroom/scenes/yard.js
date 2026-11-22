@@ -68,15 +68,20 @@ export default {
     const a1 = seatAt(S, people, ...t1, 0.4), a2 = seatAt(S, people, ...t1, 2.5), a3 = seatAt(S, people, ...t1, 4.6);
     a1.pose = 'think'; a2.pose = 'idle'; a3.pose = 'type';
     const mk = (m, x, y, z, ry = -0.35) => { m.position.set(x, y, z); m.rotation.y = ry; m.visible = false; S.add(m); return m; };
-    const q1 = mk(bubble(S.L('Pourquoi 2ʰ − 2 ?', 'Why 2ʰ − 2?'), { w: 1.9, h: 0.5 }), 2.5, 2.5, 2.3);
-    const q2 = mk(bubble(S.L('Réseau + diffusion', 'Network + broadcast'), { w: 2.0, h: 0.5, bg: '#dcf5dc' }), 4.6, 3.05, 2.0);
-    const up = mk(label('▲ 12', { w: 0.8, h: 0.36, bg: '#fff9c4', size: 0.66 }), 6.2, 3.05, 1.85);
-    const tick = mk(label(S.L('✔ acceptée', '✔ accepted'), { w: 1.15, h: 0.36, bg: '#5cb85c', fg: '#ffffff', size: 0.62 }), 4.5, 3.55, 2.0);
-    const hard = mk(label(S.L('Chapitre 2 : difficile ▲ 7', 'Chapter 2: hard ▲ 7'), { w: 2.3, h: 0.4, bg: '#ffd6d6', size: 0.6 }), 3.3, 1.75, 3.7);
+    const q1 = mk(bubble(S.L('Pourquoi 2ʰ − 2 ?', 'Why 2ʰ − 2?'), { w: 1.9, h: 0.5 }), 4.8, 2.35, 2.0);
+    const q2 = mk(bubble(S.L('Réseau + diffusion', 'Network + broadcast'), { w: 2.0, h: 0.5, bg: '#dcf5dc' }), 5.0, 2.97, 2.0);
+    const up = mk(label('▲ 12', { w: 0.8, h: 0.36, bg: '#fff9c4', size: 0.66 }), 6.62, 2.97, 2.0);
+    const tick = mk(label(S.L('✔ acceptée', '✔ accepted'), { w: 1.15, h: 0.36, bg: '#5cb85c', fg: '#ffffff', size: 0.62 }), 5.0, 3.53, 2.0);
+    const hard = mk(label(S.L('Chapitre 2 : difficile ▲ 7', 'Chapter 2: hard ▲ 7'), { w: 2.3, h: 0.4, bg: '#ffd6d6', size: 0.6 }), 5.75, 4.12, 2.0);
 
     // ---- exam archive: filing cabinet with sliding drawers
     const CAB = [9.2, -6.3];
-    S.add(part((b) => b.box(1.5, 3.2, 1, C.grey, CAB[0], 1.6, CAB[1]).box(1.6, 0.1, 1.1, C.dark, CAB[0], 3.25, CAB[1])));
+    // the cabinet only stands there during the archive step: elsewhere the other tags would sit on its year labels
+    const cab = new THREE.Group();
+    cab.position.set(CAB[0], 0, CAB[1]);
+    cab.visible = false;
+    S.add(cab);
+    cab.add(part((b) => b.box(1.5, 3.2, 1, C.grey, 0, 1.6, 0).box(1.6, 0.1, 1.1, C.dark, 0, 3.25, 0)));
     const years = ['2025', '2024', '2023', '2022'];
     const drawers = years.map((y, i) => {
       const g = new THREE.Group();
@@ -84,13 +89,13 @@ export default {
       const l = label(y, { w: 0.6, h: 0.24, bg: '#fdfbf7', size: 0.7 });
       l.position.set(0, -0.14, 0.46);
       g.add(l);
-      g.position.set(CAB[0], 2.75 - i * 0.74, CAB[1] + 0.1);
-      S.add(g);
+      g.position.set(0, 2.75 - i * 0.74, 0.1);
+      cab.add(g);
       return g;
     });
-    const archTag = mk(label(S.L('Faculté · Matière · Année · Session', 'Faculty · Subject · Year · Session'), { w: 3.0, h: 0.4, bg: '#d9ecff', size: 0.55 }), 8.6, 3.85, -6.0, -0.2);
-    const corr = mk(label(S.L('Correction ✔', 'Correction ✔'), { w: 1.2, h: 0.4, bg: '#dcf5dc', size: 0.6 }), 7.6, 2.9, -4.8, -0.2);
-    const freq = mk(label(S.L('Ce chapitre est tombé 4 fois', 'This chapter came up 4 times'), { w: 2.3, h: 0.4, bg: '#fff9c4', size: 0.58 }), 7.4, 2.15, -4.6, -0.2);
+    const archTag = mk(label(S.L('Faculté · Matière · Année · Session', 'Faculty · Subject · Year · Session'), { w: 3.0, h: 0.4, bg: '#d9ecff', size: 0.55 }), 8.9, 4.45, -5.9, -0.2);
+    const corr = mk(label(S.L('Correction ✔', 'Correction ✔'), { w: 1.2, h: 0.4, bg: '#dcf5dc', size: 0.6 }), 10.3, 3.85, -5.9, -0.2);
+    const freq = mk(label(S.L('Ce chapitre est tombé 4 fois', 'This chapter came up 4 times'), { w: 2.3, h: 0.4, bg: '#fff9c4', size: 0.58 }), 8.3, 3.85, -5.9, -0.2);
 
     // ---- glossary: a four-sided word wheel turning on its axle
     const wheel = new THREE.Group();
@@ -116,23 +121,23 @@ export default {
     const g1 = seatAt(S, people, ...t2, 0.4), g2 = seatAt(S, people, ...t2, 2.5, { glasses: true }), g3 = seatAt(S, people, ...t2, 4.6);
     g1.pose = 'write'; g2.pose = 'type'; g3.pose = 'think';
     const tutor = person({ top: 0x2ec4b6, style: 'short' });
-    tutor.position.set(4.3, 0, -3.6);
-    tutor.rotation.y = 0.9;
+    tutor.position.set(8.3, 0, -3.7);
+    tutor.rotation.y = -1.0;
     S.add(tutor);
     people.push(tutor);
     const count = label(S.L('Examen dans\n12 jours', 'Exam in\n12 days'), { w: 1.4, h: 0.95, bg: null, fg: '#fdfbf7', font: 'Kalam', size: 0.8, bold: true });
     count.position.set(9.0, 1.75, -0.91);
     S.add(count);
     count.visible = false;
-    const chat = mk(bubble(S.L('On refait le /24 ?', 'Shall we redo the /24?'), { w: 1.9, h: 0.46 }), 6.3, 2.5, -2.3, -0.3);
-    const badge = mk(label(S.L('★ Tuteur', '★ Peer tutor'), { w: 1.2, h: 0.4, bg: '#ffd166', size: 0.64 }), 4.3, 2.45, -3.6, -0.2);
-    const ribbon = mk(label(S.L('Vérifié par les étudiants', 'Verified by students'), { w: 2.5, h: 0.42, bg: '#5cb85c', fg: '#ffffff', size: 0.6 }), 6.6, 3.2, -2.6, -0.3);
+    const chat = mk(bubble(S.L('On refait le /24 ?', 'Shall we redo the /24?'), { w: 1.9, h: 0.46 }), 7.0, 3.2, -2.4, -0.3);
+    const badge = mk(label(S.L('★ Tuteur', '★ Peer tutor'), { w: 1.2, h: 0.4, bg: '#ffd166', size: 0.64 }), 8.3, 2.5, -3.7, -0.3);
+    const ribbon = mk(label(S.L('Vérifié par les étudiants', 'Verified by students'), { w: 2.5, h: 0.42, bg: '#5cb85c', fg: '#ffffff', size: 0.6 }), 7.2, 3.8, -2.4, -0.3);
 
     // ---- social: follow cards with a reason, and a privacy shield
-    const f1 = mk(label(S.L('+ Suivre · même cours', '+ Follow · same course'), { w: 2.3, h: 0.42, bg: '#fff9c4', size: 0.58 }), 2.6, 2.6, 2.4);
-    const f2 = mk(label(S.L('+ Suivre · tuteur', '+ Follow · peer tutor'), { w: 2.0, h: 0.42, bg: '#d9ecff', size: 0.58 }), 4.9, 3.15, 1.9);
-    const dm = mk(label(S.L('Messages : abonnés seulement', 'Messages: followers only'), { w: 2.8, h: 0.42, bg: '#fdfbf7', size: 0.56 }), 4.2, 3.75, 2.0);
-    const shield = mk(label(S.L('Bloquer · Signaler', 'Block · Report'), { w: 1.7, h: 0.4, bg: '#ff4d4d', fg: '#ffffff', size: 0.6 }), 2.2, 1.95, 3.6);
+    const f1 = mk(label(S.L('+ Suivre · même cours', '+ Follow · same course'), { w: 2.3, h: 0.42, bg: '#fff9c4', size: 0.58 }), 5.0, 2.8, 2.0);
+    const f2 = mk(label(S.L('+ Suivre · tuteur', '+ Follow · peer tutor'), { w: 2.0, h: 0.42, bg: '#d9ecff', size: 0.58 }), 5.5, 3.4, 2.0);
+    const dm = mk(label(S.L('Messages : abonnés seulement', 'Messages: followers only'), { w: 2.8, h: 0.42, bg: '#fdfbf7', size: 0.56 }), 5.8, 4.0, 2.0);
+    const shield = mk(label(S.L('Bloquer · Signaler', 'Block · Report'), { w: 1.7, h: 0.4, bg: '#ff4d4d', fg: '#ffffff', size: 0.6 }), 6.6, 2.2, 2.0);
 
     S.loop((t) => {
       for (const p of people) p.tick(t);
@@ -148,6 +153,7 @@ export default {
         shot: 'community',
         screen: board,
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           S.pop(q1, 0.4);
           S.pop(q2, 1.1);
           S.pop(up, 1.6);
@@ -159,19 +165,23 @@ export default {
       {
         cam: [4.6, 5.2, 4.2, 6.6, 2.2, -6.0],
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           [q1, q2, up, tick, hard].forEach((m) => S.hide(m));
           a2.pose = 'idle';
-          drawers.forEach((d, i) => S.to(d.position, { z: CAB[1] + 0.1 + (i === 0 ? 1.0 : 0.25 + (i % 2) * 0.2) }, 0.7, { delay: 0.3 + i * 0.25, ease: ease.out }));
+          S.pop(cab, 0, 1, 0.35);
+          drawers.forEach((d, i) => S.to(d.position, { z: 0.1 + (i === 0 ? 1.0 : 0.25 + (i % 2) * 0.2) }, 0.7, { delay: 0.3 + i * 0.25, ease: ease.out }));
           S.pop(archTag, 0.6);
           S.pop(corr, 1.6);
           S.pop(freq, 2.1);
         },
       },
       {
-        cam: [-1.3, 2.7, 2.4, -1.9, 2.15, -4.6],
+        cam: [1.6, 2.6, 2.6, -1.0, 2.2, -4.6],
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           [archTag, corr, freq].forEach((m) => S.hide(m));
-          drawers.forEach((d) => S.to(d.position, { z: CAB[1] + 0.1 }, 0.4));
+          drawers.forEach((d) => S.to(d.position, { z: 0.1 }, 0.4));
+          S.hide(cab, 0.1, 0.3);
           S.pop(wheel, 0.2);
           langTags.forEach((m, i) => S.pop(m, 0.5 + i * 0.15));
           S.to(wst, { q: 3 }, 5.2, { delay: 1.0, ease: steps });
@@ -181,11 +191,12 @@ export default {
       {
         cam: look(7.4, 1.9, -2.2, 7.8, 3.8),
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           S.hide(riley);
           S.hide(wheel);
           langTags.forEach((m) => S.hide(m));
-          count.visible = true;
-          S.to(count.material, { opacity: 1 }, 0.6);
+          S.call(0, () => { count.visible = true; count.material.opacity = 0; });
+          S.to(count.material, { opacity: 1 }, 0.6, { delay: 0.05 });
           S.pop(chat, 0.5);
           S.pop(badge, 1.2);
           S.call(1.2, () => { tutor.pose = 'point'; });
@@ -197,7 +208,9 @@ export default {
         shot: 'people',
         screen: board,
         run() {
+          S.tw.flush(); // finish anything the previous step still had pending (fast presenter)
           [chat, badge, ribbon].forEach((m) => S.hide(m));
+          S.to(count.material, { opacity: 0 }, 0.3, { done: () => { count.visible = false; } });
           tutor.pose = 'idle';
           S.call(0, () => board.setShot('people'));
           S.pop(f1, 0.4);

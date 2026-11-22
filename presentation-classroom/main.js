@@ -219,6 +219,8 @@ function start() {
       const b = cur.beats[bi];
       if (!b) return;
       cur.beat = bi;
+      // finish whatever the previous beat still had pending, so a late pop can't land on this one
+      cur.S.tw.flush();
       b.run && b.run(cur.S);
       if (reduced) cur.S.tw.flush();
       moveCam(cur.def, b, b.dur ?? 1.1);
@@ -255,7 +257,7 @@ function start() {
 
   // A beat marked `dive: true` in scenes.js gets one extra step: the camera
   // pushes into the screen of the scene and the real site fills the view.
-  let divedAt = '';
+  let divedAt = '', diveT = 0;
   const wantsDive = () => {
     const t = (TEXT[cur.def.id]?.beats || [])[cur.beat];
     return !!(t && t.dive) && divedAt !== `${cur.index}-${cur.beat}` && !!currentScreen();
@@ -263,10 +265,17 @@ function start() {
   function nav(dir) {
     if (!cur || !dir) return;
     if (dir > 0) {
-      if (!diving && !flying && wantsDive()) { divedAt = `${cur.index}-${cur.beat}`; dive(); return; }
+      // a press during a flight between places only finishes the flight: it must not eat the next step
+      if (flying) { camTw.flush(); return; }
+      if (!diving && wantsDive()) { divedAt = `${cur.index}-${cur.beat}`; diveT = performance.now(); dive(); return; }
+      // a second press right after the zoom started (double tap) would leave before the page is even shown
+      if (diving && performance.now() - diveT < 1300) return;
       if (diving) undive();
       if (cur.beat + 1 < cur.beats.length) goto(cur.index, cur.beat + 1);
       else if (cur.index + 1 < SCENES.length) goto(cur.index + 1, 0);
+      // a beat marked dive: 'auto' goes straight into its screen (e.g. the architecture diagram)
+      const t = (TEXT[cur.def.id]?.beats || [])[cur.beat];
+      if (t && t.dive === 'auto' && !flying && currentScreen()) { divedAt = `${cur.index}-${cur.beat}`; diveT = performance.now(); dive(); }
     } else if (diving) { undive(); divedAt = ''; }
     else if (cur.beat > 0) goto(cur.index, cur.beat - 1);
     else if (cur.index > 0) goto(cur.index - 1, 1e9);

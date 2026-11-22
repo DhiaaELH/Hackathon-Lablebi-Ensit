@@ -4,7 +4,7 @@ import { C, F, G, part, label, glow, screen, ground, karim, person, bubble, rese
 import { ease } from '../anim.js';
 
 const GREY = 0x8e959e;
-const SIL_X = (i) => 3.3 + i * 0.64;
+const SIL_X = (i) => 2.75 + i * 0.74; // wider than a date stamp, so stamps never touch
 const SIL_Z = -2.4;
 
 export default {
@@ -72,9 +72,9 @@ export default {
     // ---- anonymous silhouettes (no face, no name: only a date stamp)
     const sil = [0, 1, 2, 3, 4].map((i) => {
       const m = part((b) => b.cyl(0.22, 0.28, 1.0, GREY, 0, 0.52, 0, 0, 0, 0, 10).sph(0.23, GREY, 0, 1.28, 0));
-      m.position.set(17 + i * 0.9, 0, SIL_Z + (i % 2) * 0.25);
+      m.position.set(17 + i * 0.9, 0, SIL_Z);
       m.visible = false;
-      const stamp = label(S.L('12 mars', '12 March'), { w: 0.62, h: 0.22, bg: '#fdfbf7', size: 0.6 });
+      const stamp = label(S.L('12 mars', '12 March'), { w: 0.6, h: 0.22, bg: '#fdfbf7', size: 0.6 });
       stamp.position.set(0, 1.72, 0);
       m.add(stamp);
       S.add(m);
@@ -86,7 +86,7 @@ export default {
     };
 
     const stuck = bubble(S.L('« Je bloque sur la 2.3 »', '“I’m stuck on 2.3”'), { w: 2.3, h: 0.46, size: 0.52 });
-    stuck.position.set(4.3, 2.15, SIL_Z + 0.3);
+    stuck.position.set(7.0, 2.05, SIL_Z + 0.3); // beside the silhouettes, clear of their stamps and of the frame
     stuck.visible = false;
     S.add(stuck);
 
@@ -106,7 +106,7 @@ export default {
     S.add(bars);
 
     // ---- announcement, question, hourglass sand, senior
-    const news = label(S.L('Annonce : rappel sur la 2.3 jeudi', 'Announcement: recap of 2.3 on Thursday'), { w: 3.1, h: 0.5, bg: '#dcf5dc', size: 0.5 });
+    const news = label(S.L('Annonce : rappel sur la 2.3 jeudi', 'Announcement: recap of 2.3 on Thursday'), { w: 3.1, h: 0.45, bg: '#dcf5dc', size: 0.52 });
     news.position.set(7.6, 1.5, -0.5);
     news.visible = false;
     S.add(news);
@@ -122,7 +122,7 @@ export default {
     sandBot.scale.y = 0.0001;
     S.add(sandTop, sandBot);
     const h24 = label('24 h', { w: 0.8, h: 0.42, bg: '#fff9c4', size: 0.7, bold: true, font: 'Kalam' });
-    h24.position.set(10.3, 0.42, -2.14);
+    h24.position.set(10.3, 2.5, -2.6); // on top of the hourglass, where nothing hides it
     S.add(h24);
 
     const senior = person({ skin: 0xc68642, top: C.teal, bottom: 0x34495e, hair: 0x1a1a1a, style: 'curly', tall: 1.05, pack: C.orange });
@@ -132,6 +132,7 @@ export default {
     S.add(senior);
     const seniorTag = label(S.L('Étudiant senior', 'Senior student'), { w: 1.7, h: 0.4, bg: '#fff9c4', size: 0.56 });
     seniorTag.position.set(12.3, 2.25, -1.5);
+    seniorTag.visible = false; // only shown in the last beat (it was cut by the frame edge before)
     S.add(seniorTag);
 
     S.loop((t) => {
@@ -166,14 +167,14 @@ export default {
         },
       },
       {
-        cam: [5.2, 3.0, 8.2, 5.2, 2.1, -4],
+        cam: [3.9, 3.0, 8.6, 3.9, 2.1, -4],
         shot: 'class',
         screen: monitor,
         run() {
           monitor.setShot('class');
           K.pose = 'write';
           S.pop(news, 0.5);
-          S.fly(news, [4.6, 2.2, SIL_Z + 0.4], 1.3, { delay: 1.2, arc: 0.8 });
+          S.fly(news, [4.3, 2.22, SIL_Z + 0.4], 1.3, { delay: 1.2, arc: 0.8 }); // above the stamps, below the chart
           S.call(2.6, () => { K.pose = 'type'; });
         },
       },
@@ -183,11 +184,12 @@ export default {
         screen: queue,
         run() {
           S.hide(news);
+          S.pop(seniorTag, 0.6);
           S.pop(question, 0.2);
-          S.fly(question, [10.3, 2.75, -2.6], 1.2, { delay: 0.9, arc: 0.7 });
+          S.fly(question, [9.35, 1.9, -2.3], 1.2, { delay: 0.9, arc: 0.7 });
           S.to(sandTop.scale, { y: 0.0001 }, 2.2, { delay: 2.0, ease: ease.lin });
           S.to(sandBot.scale, { y: 1 }, 2.2, { delay: 2.0, ease: ease.lin });
-          S.fly(question, [11.45, 1.75, -1.4], 1.1, { delay: 4.4, arc: 0.5 });
+          S.fly(question, [11.25, 1.5, -1.4], 1.1, { delay: 4.4, arc: 0.5 });
           S.call(5.4, () => { senior.pose = 'raise'; });
         },
       },

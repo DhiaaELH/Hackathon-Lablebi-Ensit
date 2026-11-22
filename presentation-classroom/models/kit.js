@@ -360,8 +360,9 @@ export function person(o = {}) {
       armR.rotation.set(-2.0, 0, 0.5);
       head.rotation.set(0.1, 0.25 + s(a * 0.5) * 0.1, 0.08);
     } else if (p === 'cheer') {
-      armL.rotation.set(0, 0, 2.7 + s(a * 6) * 0.2);
-      armR.rotation.set(0, 0, -2.7 - s(a * 6 + 1) * 0.2);
+      // arms up and OUT, in a V (positive z on the left arm would cross them over the face)
+      armL.rotation.set(0, 0, -2.5 - s(a * 6) * 0.15);
+      armR.rotation.set(0, 0, 2.5 + s(a * 6 + 1) * 0.15);
       g.position.y = (g.userData.baseY || 0) + Math.abs(s(a * 6)) * 0.12;
     } else if (p === 'write') {
       armR.rotation.set(-1.25 + s(a * 6) * 0.05, 0, 0.25 + s(a * 5) * 0.08);

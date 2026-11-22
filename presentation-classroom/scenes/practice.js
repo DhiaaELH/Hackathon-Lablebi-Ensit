@@ -129,8 +129,8 @@ export default {
     const lock = part((b) => b.box(0.2, 0.22, 0.08, C.metal, 0, 0, 0).box(0.05, 0.08, 0.09, C.ink, 0, -0.02, 0.005));
     lock.position.set(0, 0.42, 0.33);
     chest.add(lock);
-    const tried = put(label(S.L('1 tentative ✓', '1 attempt ✓'), { w: 1.5, h: 0.42, bg: '#dcf5dc', size: 0.6 }), 2.9, 1.3, 0.3);
-    const sol = put(label(S.L('Corrigé détaillé', 'Worked solution'), { w: 1.9, h: 0.5, bg: '#fff9c4', size: 0.6, bold: true }), 1.35, 0.5, 0.6);
+    const tried = put(label(S.L('1 tentative ✓', '1 attempt ✓'), { w: 1.5, h: 0.42, bg: '#dcf5dc', size: 0.6 }), 2.95, 1.2, 0.3);
+    const sol = put(label(S.L('Corrigé détaillé', 'Worked solution'), { w: 1.9, h: 0.5, bg: '#fff9c4', size: 0.6, bold: true }), 2.05, 0.5, 0.6);
 
     // ----- beat 3: quiz clock, answers, misconception
     const clock = put(new THREE.Group(), 2.9, 2.75, 0);
@@ -144,7 +144,7 @@ export default {
     clock.add(hand);
     const chips = ['A', 'B', 'C'].map((c, i) => put(label(c, { w: 0.42, h: 0.42, size: 0.75, bold: true }), 0.95 + i * 0.55, 1.75, 0.35));
     const cross = put(label('✗', { w: 0.4, h: 0.4, bg: null, fg: '#e03131', size: 1, bold: true }), 1.5, 1.75, 0.4);
-    const why = put(label(S.L('On retire 2 adresses :\nréseau et diffusion', 'Remove 2 addresses:\nnetwork and broadcast'), { w: 2.4, h: 0.8, bg: '#fdfbf7', size: 0.6 }), 2.65, 1.1, 0.5);
+    const why = put(label(S.L('On retire 2 adresses :\nréseau et diffusion', 'Remove 2 addresses:\nnetwork and broadcast'), { w: 2.4, h: 0.8, bg: '#fdfbf7', size: 0.6 }), 2.45, 1.1, 0.5);
 
     // ----- beat 4: sealed mock-exam envelope
     const env = put(new THREE.Group(), 2.6, 2.3, 0.3);
@@ -162,7 +162,7 @@ export default {
     const seal = part((b) => b.cyl(0.13, 0.13, 0.04, C.red, 0, 0, 0, Math.PI / 2, 0, 0, 10));
     seal.position.set(0, -0.03, 0.07);
     env.add(seal);
-    const handed = put(label(S.L('Copie remise ✓', 'Handed in ✓'), { w: 1.6, h: 0.42, bg: '#dcf5dc', size: 0.6 }), 1.25, 1.75, 0.3);
+    const handed = put(label(S.L('Copie remise ✓', 'Handed in ✓'), { w: 1.6, h: 0.42, bg: '#dcf5dc', size: 0.6 }), 2.6, 1.45, 0.3);
 
     S.loop((t) => { hand.rotation.z = -t * 1.6 * st.clock; });
 
@@ -191,7 +191,7 @@ export default {
           S.hide(lock, 1.4);
           S.to(lid.rotation, { x: -1.9 }, 0.7, { delay: 1.7, ease: ease.back });
           S.pop(sol, 2.0);
-          S.to(sol.position, { y: 2.45 }, 0.9, { delay: 2.0, ease: ease.out });
+          S.to(sol.position, { y: 1.98 }, 0.9, { delay: 2.0, ease: ease.out });
         },
       },
       {

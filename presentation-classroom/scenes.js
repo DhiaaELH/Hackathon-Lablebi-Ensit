@@ -2,11 +2,12 @@
 // One entry per beat (one beat = one press of →). Keep bullets short.
 //   h: heading · b: bullets (max 3) · big: big number / punchline
 //   n: speaker notes (S key) · side: left | right | center | title | top
+//   dive: 'auto' → the zoom into the screen starts as soon as this beat is reached
 //   dive: true → one extra step after this beat: the camera goes into the scene's screen
 //         and the real site fills the view (use it only where the screen is the point)
 //   shot (per scene): screenshot used on the printed handout
 
-export const ORDER = ['dorm', 'arrive', 'upload', 'backstage', 'ready', 'map', 'practice', 'nova', 'calm', 'yard', 'gym', 'staff', 'engine', 'roof'];
+export const ORDER = ['dorm', 'arrive', 'upload', 'backstage', 'ready', 'map', 'practice', 'nova', 'engine', 'calm', 'yard', 'gym', 'staff', 'business', 'roof'];
 
 export const TEXT = {
   dorm: {
@@ -129,7 +130,7 @@ export const TEXT = {
       { side: 'left', h: { fr: 'Des quiz chronométrés', en: 'Timed quizzes' },
         b: [{ fr: 'Une mauvaise réponse ? On explique l’erreur de raisonnement.', en: 'Wrong answer? The site explains the misconception behind it.' }],
         n: { fr: 'Retour sur l’erreur type, pas juste « faux ».', en: 'Feedback on the misconception, not just “wrong”.' } },
-      { side: 'left', h: { fr: 'Et un examen blanc', en: 'And a mock exam' },
+      { dive: true, side: 'left', h: { fr: 'Et un examen blanc', en: 'And a mock exam' },
         b: [{ fr: 'Le corrigé reste caché jusqu’à la remise de la copie.', en: 'The answer key stays hidden until she hands it in.' }],
         n: { fr: 'L’enveloppe scellée.', en: 'The sealed envelope.' } },
     ],
@@ -199,7 +200,7 @@ export const TEXT = {
       { side: 'left', h: { fr: 'Réviser en groupe', en: 'Revising as a group' },
         b: [{ fr: 'Groupes d’étude avec discussion et compte à rebours.', en: 'Study groups with chat and an exam countdown.' }, { fr: 'Badge de tuteur pour les étudiants qui aident.', en: 'A peer-tutor badge for students who help.' }, { fr: '« Vérifié par les étudiants » sur les questions de l’IA.', en: '“Verified by students” on AI questions.' }],
         n: { fr: 'Vérification par la communauté, pas par un expert : le site le précise.', en: 'Community verification, not expert verification: the site says so.' } },
-      { side: 'left', h: { fr: 'Un petit réseau, avec des limites', en: 'A small network, with boundaries' },
+      { dive: true, side: 'left', h: { fr: 'Un petit réseau, avec des limites', en: 'A small network, with boundaries' },
         b: [{ fr: 'Suggestions de personnes à suivre, avec la raison.', en: 'Suggestions of people to follow, with the reason.' }, { fr: 'Messages privés : chacun choisit qui peut lui écrire.', en: 'Private messages: everyone chooses who can write to them.' }, { fr: 'Blocage, signalement et modération.', en: 'Block, report and moderation.' }],
         n: { fr: 'Recherche de profils sur inscription volontaire.', en: 'Profile search is opt-in.' } },
     ],
@@ -209,7 +210,7 @@ export const TEXT = {
     name: { fr: 'Les défis', en: 'Challenges' },
     shot: 'challenges',
     beats: [
-      { side: 'left', h: { fr: 'Un défi est affiché', en: 'A challenge goes up' },
+      { dive: true, side: 'left', h: { fr: 'Un défi est affiché', en: 'A challenge goes up' },
         b: [{ fr: 'Enseignants et tuteurs publient des tâches ou des projets.', en: 'Teachers and peer tutors publish tasks or projects.' }, { fr: 'Avec des critères, des points d’XP et une date limite.', en: 'With criteria, XP points and a due date.' }],
         n: { fr: 'Le tableau d’affichage montre la page Défis.', en: 'The scoreboard shows the Challenges page.' } },
       { side: 'left', h: { fr: 'L’IA note le travail', en: 'The AI grades the work' },
@@ -223,7 +224,7 @@ export const TEXT = {
       { side: 'left', h: { fr: 'Des niveaux à gravir', en: 'Levels to climb' },
         big: { fr: '100 · 300 · 600 · 1000 XP', en: '100 · 300 · 600 · 1000 XP' },
         n: { fr: 'Les marches du podium = les seuils de niveau.', en: 'The steps = the level thresholds.' } },
-      { side: 'left', h: { fr: 'Un classement qui respecte la vie privée', en: 'A leaderboard that respects privacy' },
+      { dive: true, side: 'left', h: { fr: 'Un classement qui respecte la vie privée', en: 'A leaderboard that respects privacy' },
         b: [{ fr: 'Les profils non publics restent anonymes.', en: 'Non-public profiles stay anonymous.' }, { fr: 'L’auteur peut noter à la main ou corriger la note de l’IA.', en: 'The author can grade by hand or override the AI grade.' }],
         n: { fr: 'Le nom flouté sur le podium.', en: 'The blurred name on the podium.' } },
     ],
@@ -240,7 +241,7 @@ export const TEXT = {
         big: { fr: 'Rien en dessous de 5 étudiants', en: 'Nothing below 5 students' },
         b: [{ fr: 'À quatre, le cadre reste vide.', en: 'With four, the frame stays empty.' }],
         n: { fr: 'Le cinquième arrive, le graphique apparaît. Valable pour chaque chiffre.', en: 'The fifth arrives, the chart appears. True for every number shown.' } },
-      { side: 'left', h: { fr: 'Le professeur répond à la classe', en: 'The teacher answers the class' },
+      { dive: true, side: 'left', h: { fr: 'Le professeur répond à la classe', en: 'The teacher answers the class' },
         b: [{ fr: 'Une réponse ou une annonce pour tout le monde.', en: 'A response or an announcement for everyone.' }, { fr: 'Onglet Classe : liste des inscrits et annonces.', en: 'Class tab: roster and announcements.' }],
         n: { fr: 'Le mur montre l’onglet Classe.', en: 'The wall shows the Class tab.' } },
       { dive: true, side: 'left', h: { fr: 'Personne ne reste sans réponse', en: 'Nobody is left without an answer' },
@@ -251,6 +252,7 @@ export const TEXT = {
   },
 
   engine: {
+    shot: { fr: 'architecture-fr', en: 'architecture-en' },
     name: { fr: 'Sous le capot', en: 'Under the hood' },
     beats: [
       { side: 'left', h: { fr: 'La salle des machines', en: 'The engine room' },
@@ -265,6 +267,31 @@ export const TEXT = {
       { side: 'left', h: { fr: 'Des modèles au choix, et de l’honnêteté', en: 'A choice of models, and honesty' },
         b: [{ fr: 'Gemini par défaut, ou Claude en changeant un réglage.', en: 'Gemini by default, or Claude by changing one setting.' }, { fr: 'Un modèle rapide pour le tuteur, un plus fort pour créer le cours.', en: 'A fast model for the tutor, a stronger one to build the course.' }, { fr: 'Sans clé : un mode démo affiché clairement.', en: 'Without a key: a clearly labelled demo mode.' }],
         n: { fr: 'Chaque appel est journalisé avec ses jetons ; l’admin voit le coût.', en: 'Every call is logged with its tokens; the admin sees the cost.' } },
+      { dive: 'auto', side: 'left', h: { fr: 'Toute l’architecture', en: 'The whole architecture' },
+        n: { fr: 'Le schéma complet s’affiche : du navigateur à la base, en rouge ce qui appelle un modèle d’IA.', en: 'The full diagram appears: browser to database, AI calls in red.' } },
+    ],
+  },
+
+  business: {
+    name: { fr: 'Le modèle économique', en: 'The business model' },
+    shot: { fr: 'business-fr', en: 'business-en' },
+    beats: [
+      { side: 'left', h: { fr: 'Combien coûte LessonForge ?', en: 'What does LessonForge cost?' },
+        big: { fr: '25,01 TND / mois', en: '25.01 TND / month' },
+        b: [{ fr: 'Serveur Hetzner CX23 avec sauvegardes : 24,02 TND.', en: 'Hetzner CX23 server with backups: 24.02 TND.' }, { fr: 'Domaine .tn : 0,99 TND.', en: '.tn domain: 0.99 TND.' }],
+        n: { fr: 'Hetzner CX23 : 2 vCPU, 4 Go de RAM, 5,99 € par mois, plus 20 % pour les sauvegardes automatiques. Domaine .tn chez Ooredoo Host : 11,900 TND par an. 1 € = 3,3420 TND (BCT, 5 novembre 2026). Prix hors TVA.', en: 'Hetzner CX23: 2 vCPU, 4 GB RAM, €5.99 a month, plus 20% for automatic backups. .tn domain at Ooredoo Host: 11.900 TND a year. €1 = 3.3420 TND (BCT, 5 Nov 2026). Prices excluding VAT.' } },
+      { side: 'left', h: { fr: 'Le coût de l’IA, mesuré', en: 'The AI cost, measured' },
+        b: [{ fr: 'Créer un cours complet : 0,958 TND.', en: 'Building a full course: 0.958 TND.' }, { fr: 'Une réponse du tuteur : 0,0044 TND.', en: 'One tutor answer: 0.0044 TND.' }, { fr: 'Une correction : 0,0027 TND.', en: 'One graded answer: 0.0027 TND.' }],
+        n: { fr: 'Jetons mesurés dans le journal llm_calls, multipliés par les tarifs Gemini du code (pricing.py), 1 USD = 3,0713 TND (BCT, 19/11/2026).', en: 'Tokens measured in the llm_calls log, times the Gemini prices in the code (pricing.py), 1 USD = 3.0713 TND (BCT, 19 Nov 2026).' } },
+      { side: 'left', h: { fr: 'Par étudiant', en: 'Per student' },
+        big: { fr: '0,344 TND / mois', en: '0.344 TND / month' },
+        b: [{ fr: '15 questions et 5 corrections par semaine.', en: '15 questions and 5 graded answers a week.' }, { fr: '300 étudiants, hébergement compris : 1 203,3 TND par an.', en: '300 students, hosting included: 1,203.3 TND a year.' }],
+        n: { fr: 'Le cours est créé une fois par classe, pas par étudiant, et le cache évite de payer deux fois la même demande.', en: 'A course is built once per class, not per student, and the cache avoids paying twice for the same request.' } },
+      { side: 'left', h: { fr: 'Comment ça rapporte', en: 'How it earns' },
+        b: [{ fr: 'Étudiant : gratuit.', en: 'Student: free.' }, { fr: 'Premium : 5 TND par mois.', en: 'Premium: 5 TND a month.' }, { fr: 'Faculté : 15 TND par étudiant et par an.', en: 'Faculty: 15 TND per student per year.' }],
+        n: { fr: 'Une faculté de 300 étudiants : 4 500 TND par an pour 1 203,3 TND de coûts, soit 3 296,7 TND de marge. 6 abonnés Premium paient le serveur et le domaine.', en: 'A 300-student faculty: 4,500 TND a year for 1,203.3 TND of costs, a 3,296.7 TND margin. 6 Premium subscribers pay for the server and the domain.' } },
+      { dive: 'auto', side: 'left', h: { fr: 'Le détail', en: 'The details' },
+        n: { fr: 'La feuille complète : coûts à gauche, offres à droite, sources en bas.', en: 'The full sheet: costs on the left, plans on the right, sources at the bottom.' } },
     ],
   },
 

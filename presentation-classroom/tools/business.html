@@ -1,0 +1,112 @@
+<!doctype html>
+<!-- Source of shots/business-fr.webp and shots/business-en.webp (the sheet shown at the end of the
+     business scene). Edit here, then run tools/render_architecture.py. Open with ?lang=en for English.
+     Figures:
+       tokens per action  = measured in the app's llm_calls log (course build 100k in / 18k out,
+                            tutor answer 4,100 in / 150 out with 16% cache reads, grading 1,400 in / 190 out)
+       USD per 1M tokens  = backend/app/llm/pricing.py (Gemini 3.5 Flash 1.50 / 9.00, Flash-Lite 0.30 / 2.50, cache read 0.03)
+       1 USD = 3.0713 TND = Banque Centrale de Tunisie reference rate, 19 Nov 2026
+       usage per student  = 15 tutor questions + 5 graded answers a week, 4 courses per class of 30
+       server             = Hetzner Cloud CX23 (2 vCPU, 4 GB RAM, 40 GB NVMe, IPv4) 5.99 EUR/month + automatic backups (+20%)
+       domain             = .tn at Ooredoo Host, 11.900 TND HT a year
+       1 EUR = 3.3420 TND = BCT average rate, 5 Nov 2026 · prices excluding VAT
+     Plans and prices are our proposal. -->
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #2d2d2d; --redink: #c62828; --postit: #fff9c4; --paper: #fdfbf7; --muted: #5d5850;
+          --wob: 255px 15px 225px 15px / 15px 225px 15px 255px; --wob2: 15px 225px 15px 255px / 255px 15px 225px 15px; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1600px; height: 1000px; overflow: hidden; }
+  body { position: relative; font-family: "Atkinson Hyperlegible Next", sans-serif; color: var(--ink);
+         background: var(--paper) radial-gradient(#d9d2c4 1.2px, transparent 1.3px) 0 0 / 24px 24px; }
+  h1 { position: absolute; left: 56px; top: 30px; font: 700 52px/1 Kalam, cursive; }
+  h1 u { text-decoration: none; background: linear-gradient(transparent 70%, #ffd0d0 70%); }
+  .box { position: absolute; background: #fff; border: 3px solid var(--ink); border-radius: var(--wob); box-shadow: 5px 5px 0 var(--ink); padding: 18px 24px; }
+  h2 { font: 700 32px/1.1 Kalam, cursive; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { font-size: 23px; padding: 7px 0; border-bottom: 2px dashed #d8d0c2; vertical-align: baseline; }
+  td.n { text-align: right; font-weight: 700; white-space: nowrap; padding-left: 16px; }
+  td small { display: block; font: 400 18px "Patrick Hand", cursive; color: var(--muted); }
+  tr.tot td { border-bottom: 0; border-top: 3px solid var(--ink); font-size: 26px; padding-top: 12px; }
+  tr.tot td.n { color: var(--redink); }
+  .plans { display: flex; gap: 18px; }
+  .plan { flex: 1; border: 3px solid var(--ink); border-radius: var(--wob2); padding: 16px 16px 20px; background: #fff; box-shadow: 4px 4px 0 var(--ink); }
+  .plan h3 { font: 700 27px/1.1 Kalam, cursive; }
+  .plan .p { font: 700 34px/1.15 Kalam, cursive; color: var(--redink); margin: 6px 0 8px; }
+  .plan .p small { display: block; font: 400 20px "Patrick Hand", cursive; color: var(--muted); }
+  .plan ul { list-style: none; padding: 0; }
+  .plan li { font-size: 21px; line-height: 1.32; padding-left: 15px; position: relative; }
+  .plan li::before { content: "•"; position: absolute; left: 1px; color: var(--redink); font-weight: 700; }
+  .ex { margin-top: 20px; font-size: 22px; line-height: 1.4; background: var(--postit); border: 3px solid var(--ink); border-radius: var(--wob); padding: 12px 18px; }
+  .ex b { color: var(--redink); }
+  .src { position: absolute; left: 56px; right: 56px; bottom: 22px; font: 400 18px "Patrick Hand", cursive; color: var(--muted); }
+</style>
+</head>
+<body>
+<h1 data-fr="Ce que ça coûte, <u>ce que ça rapporte</u>" data-en="What it costs, <u>what it earns</u>"></h1>
+
+<div class="box" style="left:56px; top:130px; width:690px; height:760px; background:#e8f4ff">
+  <h2 data-fr="Coûts par mois" data-en="Costs per month"></h2>
+  <table>
+    <tr><td data-fr="Serveur<small>Hetzner CX23, 2 vCPU, 4 Go de RAM, sauvegardes</small>" data-en="Server<small>Hetzner CX23, 2 vCPU, 4 GB RAM, backups</small>"></td><td class="n" data-fr="24,02 TND" data-en="24.02 TND"></td></tr>
+    <tr><td data-fr="Nom de domaine .tn<small>Ooredoo Host, 11,900 TND par an</small>" data-en=".tn domain name<small>Ooredoo Host, 11.900 TND a year</small>"></td><td class="n" data-fr="0,99 TND" data-en="0.99 TND"></td></tr>
+    <tr><td data-fr="Créer un cours complet<small>Gemini 3.5 Flash, 100 000 + 18 000 jetons</small>" data-en="Build one full course<small>Gemini 3.5 Flash, 100,000 + 18,000 tokens</small>"></td><td class="n" data-fr="0,958 TND" data-en="0.958 TND"></td></tr>
+    <tr><td data-fr="Une réponse du tuteur<small>Flash-Lite, 4 100 + 150 jetons</small>" data-en="One tutor answer<small>Flash-Lite, 4,100 + 150 tokens</small>"></td><td class="n" data-fr="0,0044 TND" data-en="0.0044 TND"></td></tr>
+    <tr><td data-fr="Une correction d’exercice<small>Flash-Lite, 1 400 + 190 jetons</small>" data-en="One graded answer<small>Flash-Lite, 1,400 + 190 tokens</small>"></td><td class="n" data-fr="0,0027 TND" data-en="0.0027 TND"></td></tr>
+    <tr class="tot"><td data-fr="Hébergement, par mois<small>serveur + domaine</small>" data-en="Hosting, per month<small>server + domain</small>"></td><td class="n" data-fr="25,01 TND" data-en="25.01 TND"></td></tr>
+    <tr class="tot"><td data-fr="IA, par étudiant actif et par mois<small>15 questions + 5 corrections par semaine</small>" data-en="AI, per active student per month<small>15 questions + 5 graded answers a week</small>"></td><td class="n" data-fr="0,344 TND" data-en="0.344 TND"></td></tr>
+  </table>
+  <div class="ex" data-fr="Promo de <b>300 étudiants</b>, hébergement compris :<br><b>166,6 TND</b> le 1<sup>er</sup> mois, puis <b>128,3 TND</b> par mois,<br><b>1 203,3 TND</b> par an (<b>0,427 TND</b> par étudiant et par mois)."
+       data-en="Cohort of <b>300 students</b>, hosting included:<br><b>166.6 TND</b> the 1st month, then <b>128.3 TND</b> a month,<br><b>1,203.3 TND</b> a year (<b>0.427 TND</b> per student per month)."></div>
+</div>
+
+<div class="box" style="left:790px; top:130px; width:754px; height:760px; background:#fff4f6">
+  <h2 data-fr="Notre modèle" data-en="Our model"></h2>
+  <div class="plans">
+    <div class="plan">
+      <h3 data-fr="Étudiant" data-en="Student"></h3>
+      <div class="p" data-fr="Gratuit" data-en="Free"></div>
+      <ul>
+        <li data-fr="cours, exercices, quiz" data-en="courses, exercises, quizzes"></li>
+        <li data-fr="tuteur : 10 questions par jour" data-en="tutor: 10 questions a day"></li>
+        <li data-fr="communauté" data-en="community"></li>
+      </ul>
+    </div>
+    <div class="plan" style="background:var(--postit)">
+      <h3>Premium</h3>
+      <div class="p" data-fr="5 TND <small>/ mois</small>" data-en="5 TND <small>/ month</small>"></div>
+      <ul>
+        <li data-fr="tuteur sans limite" data-en="unlimited tutor"></li>
+        <li data-fr="examens blancs, annales" data-en="mock exams, exam archive"></li>
+        <li data-fr="pack hors ligne, audio" data-en="offline pack, audio"></li>
+      </ul>
+    </div>
+    <div class="plan" style="background:#e3f6e3">
+      <h3 data-fr="Faculté" data-en="Faculty"></h3>
+      <div class="p" data-fr="15 TND <small>/ étudiant / an</small>" data-en="15 TND <small>/ student / year</small>"></div>
+      <ul>
+        <li data-fr="Premium pour toute la promo" data-en="Premium for the whole cohort"></li>
+        <li data-fr="suivi de classe, défis" data-en="class insights, challenges"></li>
+        <li data-fr="outils enseignants" data-en="teacher tools"></li>
+      </ul>
+    </div>
+  </div>
+  <div class="ex" data-fr="Faculté de <b>300 étudiants</b> : <b>4 500 TND</b> de licence par an<br>pour <b>1 203,3 TND</b> de coûts, soit <b>3 296,7 TND</b> de marge.<br>Premium : <b>5 TND</b> par mois pour <b>0,344 TND</b> d’IA."
+       data-en="Faculty of <b>300 students</b>: <b>4,500 TND</b> licence a year<br>for <b>1,203.3 TND</b> of costs, a <b>3,296.7 TND</b> margin.<br>Premium: <b>5 TND</b> a month for <b>0.344 TND</b> of AI."></div>
+  <div class="ex" style="background:#e3f6e3" data-fr="<b>6 abonnés Premium</b> paient le serveur et le domaine.<br><b>1 abonné Premium</b> paie l’IA de <b>14 étudiants actifs</b>."
+       data-en="<b>6 Premium subscribers</b> pay for the server and the domain.<br><b>1 Premium subscriber</b> pays for the AI of <b>14 active students</b>."></div>
+</div>
+
+<div class="src" data-fr="Jetons mesurés dans le journal llm_calls · tarifs Gemini (novembre 2026) · Hetzner CX23 5,99 € + sauvegardes 20 % · .tn Ooredoo Host · 1 USD = 3,0713 TND (BCT, 19/11) · 1 € = 3,3420 TND (BCT, 05/11) · prix HT · année : 8 mois de cours."
+     data-en="Tokens measured in the llm_calls log · Gemini prices (Nov 2026) · Hetzner CX23 €5.99 + backups 20% · .tn Ooredoo Host · 1 USD = 3.0713 TND (BCT, 19 Nov) · €1 = 3.3420 TND (BCT, 5 Nov) · excl. VAT · year: 8 teaching months."></div>
+
+<script>
+  const lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'fr';
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-fr]').forEach((el) => { el.innerHTML = el.dataset[lang]; });
+</script>
+</body>
+</html>

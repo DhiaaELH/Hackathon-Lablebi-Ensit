@@ -1,0 +1,159 @@
+<!doctype html>
+<!-- Source of shots/architecture-fr.webp and shots/architecture-en.webp (the diagram shown after the
+     engine room). Edit here, then run tools/render_architecture.py. Open with ?lang=en for English. -->
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #2d2d2d; --red: #ff4d4d; --redink: #c62828; --postit: #fff9c4; --paper: #fdfbf7; --muted: #5d5850;
+          --wob: 255px 15px 225px 15px / 15px 225px 15px 255px; --wob2: 15px 225px 15px 255px / 255px 15px 225px 15px; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1600px; height: 1000px; overflow: hidden; }
+  body { position: relative; font-family: "Atkinson Hyperlegible Next", sans-serif; color: var(--ink);
+         background: var(--paper) radial-gradient(#d9d2c4 1.2px, transparent 1.3px) 0 0 / 24px 24px; }
+  h1 { position: absolute; left: 56px; top: 30px; font: 700 52px/1 Kalam, cursive; }
+  h1 u { text-decoration: none; background: linear-gradient(transparent 70%, #ffd0d0 70%); }
+  .sub { position: absolute; left: 60px; top: 96px; font: 400 23px "Patrick Hand", cursive; color: var(--muted); }
+  .box { position: absolute; background: #fff; border: 3px solid var(--ink); border-radius: var(--wob); box-shadow: 5px 5px 0 var(--ink); padding: 14px 18px; }
+  .box h2 { font: 700 27px/1.1 Kalam, cursive; margin-bottom: 6px; }
+  .box h2 small { font: 400 19px "Patrick Hand", cursive; color: var(--muted); margin-left: 6px; }
+  .box ul { list-style: none; padding: 0; }
+  .box li { font-size: 21px; line-height: 1.3; padding-left: 16px; position: relative; }
+  .box li::before { content: "•"; position: absolute; left: 2px; color: var(--redink); font-weight: 700; }
+  .y { background: var(--postit); } .b { background: #e4f0ff; } .g { background: #e3f6e3; } .p { background: #ffe6ee; } .v { background: #efe6ff; }
+  .chip { display: inline-block; font: 400 21px "Patrick Hand", cursive; border: 2px solid var(--ink); border-radius: var(--wob2); padding: 1px 10px; margin: 3px 3px 3px 0; background: #fff; }
+  .chip.r { background: #ffd6d6; } .chip.k { background: #fff9c4; }
+  .row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .arrowtxt { font: 400 19px "Patrick Hand", cursive; color: var(--muted); }
+  svg { position: absolute; inset: 0; pointer-events: none; }
+  .lbl { position: absolute; font: 400 19px "Patrick Hand", cursive; color: var(--redink); background: var(--paper); padding: 0 5px; }
+  .legend { position: absolute; right: 56px; top: 40px; font: 400 20px "Patrick Hand", cursive; color: var(--muted); text-align: right; line-height: 1.35; }
+</style>
+</head>
+<body>
+<h1 data-fr="Architecture de <u>LessonForge</u>" data-en="<u>LessonForge</u> architecture"></h1>
+<div class="sub" data-fr="Du navigateur à la base de données : ce qui se passe quand un cours est déposé ou qu’une question est posée."
+     data-en="From the browser to the database: what happens when a course is uploaded or a question is asked."></div>
+<div class="legend" data-fr="<b style='color:#c62828'>rouge</b> = appelle un modèle d’IA<br>le reste est du code classique"
+     data-en="<b style='color:#c62828'>red</b> = calls an AI model<br>everything else is plain code"></div>
+
+<!-- 1 browser -->
+<div class="box b" style="left:56px; top:150px; width:350px; height:178px">
+  <h2 data-fr="Navigateur" data-en="Browser"></h2>
+  <ul>
+    <li>React 18 + TypeScript, Vite</li>
+    <li data-fr="TanStack Query : cache client" data-en="TanStack Query: client cache"></li>
+    <li data-fr="KaTeX pour les maths" data-en="KaTeX for maths"></li>
+    <li>FR · EN · العربية (RTL) · Derja</li>
+  </ul>
+</div>
+
+<!-- 2 nginx -->
+<div class="box" style="left:446px; top:194px; width:150px; height:92px; text-align:center">
+  <h2 style="margin:0">nginx</h2><div class="arrowtxt">HTTPS</div>
+</div>
+
+<!-- 3 FastAPI -->
+<div class="box y" style="left:636px; top:150px; width:370px; height:178px">
+  <h2>FastAPI <small>Python 3.12</small></h2>
+  <ul>
+    <li data-fr="session par cookie" data-en="cookie session"></li>
+    <li data-fr="protection CSRF" data-en="CSRF protection"></li>
+    <li data-fr="limites de débit" data-en="rate limits"></li>
+    <li data-fr="droits vérifiés par l’API" data-en="permissions checked in the API"></li>
+  </ul>
+</div>
+
+<!-- 4 Jordan -->
+<div class="box" style="left:636px; top:440px; width:370px; height:170px">
+  <h2 data-fr="Jordan <small>coordinateur</small>" data-en="Jordan <small>coordinator</small>"></h2>
+  <ul>
+    <li data-fr="code classique, pas une IA" data-en="plain code, not an AI"></li>
+    <li data-fr="tâches et événements suivis" data-en="tasks and events tracked"></li>
+    <li data-fr="relances limitées" data-en="bounded retries"></li>
+  </ul>
+</div>
+
+<!-- 5 roles -->
+<div class="box p" style="left:1046px; top:150px; width:500px; height:400px">
+  <h2 data-fr="Rôles d’IA <small>un modèle, des prompts et schémas distincts</small>" data-en="AI roles <small>one model, distinct prompts and schemas</small>"></h2>
+  <div class="arrowtxt" style="margin:4px 0 2px" data-fr="Création du cours :" data-en="Building the course:"></div>
+  <div class="row"><span class="chip r" data-fr="Clara · analyse" data-en="Clara · analysis"></span><span class="arrowtxt">→</span>
+    <span class="chip r">Quinn</span><span class="chip r">Alex</span><span class="chip r">Sage</span><span class="chip r">Max</span></div>
+  <div class="row"><span class="arrowtxt" style="margin-left:150px" data-fr="(en parallèle)" data-en="(in parallel)"></span><span class="arrowtxt">→</span>
+    <span class="chip r" data-fr="Riley · contrôle" data-en="Riley · quality check"></span></div>
+  <div class="arrowtxt" style="margin:10px 0 2px" data-fr="Pendant l’étude :" data-en="While studying:"></div>
+  <div class="row"><span class="chip k" data-fr="Nova · routage" data-en="Nova · routing"></span><span class="arrowtxt">→</span>
+    <span class="chip r" data-fr="Sam · tuteur, cite le cours" data-en="Sam · tutor, cites the course"></span></div>
+  <div class="row"><span class="chip r" data-fr="Resource Finder · liens vérifiés" data-en="Resource Finder · checked links"></span></div>
+  <ul style="margin-top:10px">
+    <li data-fr="sorties structurées validées (Pydantic)" data-en="validated structured outputs (Pydantic)"></li>
+    <li data-fr="citation non retrouvée = supprimée" data-en="citation not retrieved = dropped"></li>
+  </ul>
+</div>
+
+<!-- 6 LLM -->
+<div class="box v" style="left:1046px; top:630px; width:500px; height:250px">
+  <h2 data-fr="Fournisseur d’IA" data-en="AI provider"></h2>
+  <ul>
+    <li data-fr="Gemini par défaut, ou Claude (un réglage)" data-en="Gemini by default, or Claude (one setting)"></li>
+    <li data-fr="niveau rapide : le tuteur (~2 s)" data-en="fast tier: the tutor (~2 s)"></li>
+    <li data-fr="niveau puissant : la création du cours" data-en="smart tier: building the course"></li>
+    <li data-fr="cache de prompt : le cours entier, partagé par les rôles" data-en="prompt cache: the whole course, shared by the roles"></li>
+    <li data-fr="sans clé : mode démo affiché" data-en="no key: demo mode shown"></li>
+  </ul>
+</div>
+
+<!-- 7 Postgres -->
+<div class="box g" style="left:56px; top:500px; width:540px; height:280px">
+  <h2>PostgreSQL 16 <small>+ pgvector</small></h2>
+  <ul>
+    <li data-fr="cours, sections, passages avec leur source (S12)" data-en="courses, sections, passages with their source (S12)"></li>
+    <li data-fr="recherche plein texte (GIN) + vecteurs (HNSW)" data-en="full-text search (GIN) + vectors (HNSW)"></li>
+    <li data-fr="les deux classements fusionnés (RRF)" data-en="the two rankings fused (RRF)"></li>
+    <li data-fr="limitée aux cours que l’utilisateur peut lire" data-en="limited to courses the user may read"></li>
+    <li data-fr="cache des réponses (SHA-256 de la requête)" data-en="response cache (SHA-256 of the request)"></li>
+    <li data-fr="journal llm_calls : jetons et coût" data-en="llm_calls log: tokens and cost"></li>
+    <li data-fr="suivi de classe : rien sous 5 étudiants" data-en="class insights: nothing below 5 students"></li>
+  </ul>
+</div>
+
+<!-- 8 plain code -->
+<div class="box" style="left:636px; top:700px; width:370px; height:175px">
+  <h2 data-fr="Code classique" data-en="Plain code"></h2>
+  <ul>
+    <li data-fr="notes, graphe des prérequis" data-en="scoring, prerequisite graph"></li>
+    <li data-fr="carte des notions, export PDF" data-en="topic map, PDF export"></li>
+    <li data-fr="suivi de classe, notifications" data-en="class insights, notifications"></li>
+  </ul>
+</div>
+
+<svg viewBox="0 0 1600 1000">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#2d2d2d"/></marker></defs>
+  <g stroke="#2d2d2d" stroke-width="3" fill="none" stroke-linecap="round" marker-end="url(#a)">
+    <path d="M414,240 C425,238 430,242 438,240"/>
+    <path d="M604,240 C612,238 620,242 628,240"/>
+    <path d="M821,336 C819,370 823,400 821,432"/>
+    <path d="M1014,520 C1025,470 1030,420 1038,400"/>
+    <path d="M1296,556 C1294,585 1298,605 1296,622"/>
+    <path d="M628,300 C612,360 606,430 600,490"/>
+    <path d="M628,560 C620,562 614,562 606,562"/>
+    <path d="M821,618 C819,650 823,670 821,692"/>
+  </g>
+  <g stroke="#c62828" stroke-width="3" fill="none" stroke-dasharray="7 6" marker-end="url(#a)">
+    <path d="M1070,558 C1062,640 970,655 880,655 L606,655"/>
+  </g>
+</svg>
+<div class="lbl" style="left:836px; top:372px" data-fr="travail" data-en="work"></div>
+<div class="lbl" style="left:500px; top:400px" data-fr="lit / écrit" data-en="read / write"></div>
+<div class="lbl" style="left:650px; top:662px" data-fr="passages du cours" data-en="course passages"></div>
+
+<script>
+  const lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'fr';
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-fr]').forEach((el) => { el.innerHTML = el.dataset[lang]; });
+</script>
+</body>
+</html>

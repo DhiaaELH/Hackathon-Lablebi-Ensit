@@ -70,7 +70,7 @@ export default {
     S.loop((t) => {
       cast.forEach((p) => p.tick(t));
       bots.forEach((r) => r.tick(t));
-      novaS.position.set(7.2 + Math.cos(t * 0.9) * 4.2, 2.9 + Math.sin(t * 1.7) * 0.4, -0.6 + Math.sin(t * 0.9) * 1.6);
+      novaS.position.set(7.2 + Math.cos(t * 0.9) * 4.2, 2.2 + Math.sin(t * 1.7) * 0.25, -0.6 + Math.sin(t * 0.9) * 1.6);
       novaS.rotation.y = -t * 0.9;
     });
 
@@ -131,7 +131,7 @@ export default {
     return [
       { cam: [5.4, 4.6, 9.6, 6.2, 0.5, 0] },
       {
-        cam: [6.4, 4.6, 13.2, 6.7, 4.9, -3],
+        cam: [3.7, 4.6, 13.6, 4.0, 4.9, -3], // QR and cast both to the right of the text card
         dur: 1.8,
         run() {
           throwers.forEach((p) => { if (p.pose !== undefined) p.pose = 'throw'; });

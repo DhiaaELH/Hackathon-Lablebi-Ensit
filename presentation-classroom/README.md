@@ -47,17 +47,22 @@ automatically when the system asks for reduced motion).
 | 5 | Where am I lost? | topic map, prerequisite-gap diagnosis, mini-lesson |
 | 6 | Practice | hints, rubric grading, unlocked solution, timed quiz, mock exam |
 | 7 | Nova and Sam | routing with hand-off, cited answers, "not in your course", modes, languages |
-| 8 | The same night, differently | spaced repetition, audio, planner, offline pack |
-| 9 | Learning together | community, exam archive, glossary, study groups |
-| 10 | Challenges | AI grading, 60% pass line, 3 attempts, XP levels, leaderboard |
-| 11 | See the class, not the student | anonymous signals, the rule of five, senior queue |
-| 12 | Under the hood | pipeline, hybrid search, three caches, models |
-| 13 | End of the semester | recap, QR code to the live site |
+| 8 | Under the hood | pipeline, hybrid search, three caches, models, then the architecture diagram full screen |
+| 9 | The same night, differently | spaced repetition, audio, planner, offline pack |
+| 10 | Learning together | community, exam archive, glossary, study groups |
+| 11 | Challenges | AI grading, 60% pass line, 3 attempts, XP levels, leaderboard |
+| 12 | See the class, not the student | anonymous signals, the rule of five, senior queue |
+| 13 | The business model | running costs in TND (measured AI tokens), plans and prices, then the cost sheet full screen |
+| 14 | End of the semester | recap, QR code to the live site |
+
+The architecture diagram (`tools/architecture.html`) and the cost sheet (`tools/business.html`) are
+FR/EN pages (`?lang=en`) rendered to `shots/<name>-fr.webp` / `-en.webp` by `tools/render_architecture.py`.
+The cost sheet's sources and assumptions are listed in a comment at the top of `tools/business.html`.
 
 ## Editing
 
 - **Words** (both languages, speaker notes, scene order): `scenes.js`. One entry per beat.
-  Add `dive: true` to a beat to get the extra "fly into the screen" step after it; remove it to skip.
+  Add `dive: true` to a beat (17 beats have it) to get the extra "fly into the screen" step after it; remove it to skip.
 - **A scene's 3D**: `scenes/<id>.js`. Each exports `{ place, origin, mood, build(S) }`; `build` returns
   one object per beat: `{ cam: [x,y,z, lookX,lookY,lookZ], run(S) { … }, shot, screen }`.
   The number of beats must match the entries in `scenes.js`.

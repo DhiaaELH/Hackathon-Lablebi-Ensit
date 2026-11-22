@@ -35,9 +35,9 @@ export default {
       b.cyl(0.7, 0.8, 1.1, C.woodDark, 7.3, 0.55, -8.0).cyl(0.76, 0.76, 0.08, C.red, 7.3, 1.12, -8.0);
       b.box(2.7, 1.9, 0.1, 0xb98a5a, -3.4, 2.8, -9.15).box(2.9, 0.1, 0.14, C.woodDark, -3.4, 3.8, -9.12).box(2.9, 0.1, 0.14, C.woodDark, -3.4, 1.8, -9.12);
       b.box(1.6, 0.06, 0.3, C.woodDark, -7.0, 2.2, -3, 0, Math.PI / 2).box(0.3, 0.4, 0.2, C.blue, -7.0, 2.43, -3.4).box(0.3, 0.5, 0.2, C.yellow, -7.0, 2.48, -2.9);
-      for (const [x, z] of [[-2, -2], [2.5, -1.5]]) b.cyl(0.012, 0.012, 1.2, C.ink, x, 4.8, z);
+      for (const [x, z] of [[-2, -2]]) b.cyl(0.012, 0.012, 1.2, C.ink, x, 4.8, z);
     }));
-    S.add(instanced(G.sph(0.16), [[-2, -2], [2.5, -1.5]].map(([x, z]) => ({ p: [x, 4.15, z], c: 0xffe08a })), { basic: true }));
+    S.add(instanced(G.sph(0.16), [[-2, -2]].map(([x, z]) => ({ p: [x, 4.15, z], c: 0xffe08a })), { basic: true }));
     // moving belt slats
     const slats = instanced(G.box(0.07, 0.02, 0.78), Array.from({ length: 16 }, () => ({ c: 0x5a606d })));
     S.add(slats);
@@ -67,6 +67,9 @@ export default {
     put('max', BENCH[3], 0, BENCH_Z - 0.8, S.L('Examen blanc', 'Mock exam'));
     put('riley', 5.9, 0, BELT_Z - 0.1, S.L('Contrôle qualité', 'Quality check'), -0.4);
     put('finder', -9.5, 0, -7.6, S.L('Ressources', 'Resources'), 0.3);
+    // nudge two tags sideways so they neither overlap a neighbour's tag nor leave the frame
+    tags.clara.position.x -= 0.8;
+    tags.riley.position.x -= 0.2;
     bots.finder.visible = false;
     tags.finder.visible = false;
 
@@ -153,7 +156,7 @@ export default {
     const work = (names, v, delay = 0) => S.call(delay, () => names.forEach((n) => { bots[n].work = v; }));
 
     return [
-      { cam: [-3.2, 5.0, 5.6, -1.3, 1.0, -5] },
+      { cam: [-3.3, 5.3, 6.4, -0.6, 1.0, -5] },
       {
         cam: [7.7, 2.9, -2.9, 6.5, 2.9, -9],
         run() {
@@ -167,8 +170,11 @@ export default {
         },
       },
       {
-        cam: [-5.2, 3.3, 3.2, -3.7, 1.2, -4],
+        cam: [-5.6, 3.5, 4.0, -3.0, 1.3, -4.5],
         run() {
+          // Jordan's board and note would be cut by the top of this shot
+          S.hide(board, 0, 0.2);
+          S.hide(code, 0, 0.2);
           for (const n of OTHERS) S.pop(tags[n], 0.5, 1, 0.35);
           for (const n of ['riley', 'max', 'sage']) S.pop(bots[n], 0.5, 1.25, 0.35);
           work(['jordan'], 0.15);
@@ -184,6 +190,11 @@ export default {
       {
         cam: [-2.2, 4.0, 2.4, 0.4, 1.9, -7],
         run() {
+          S.pop(board, 0.4);
+          S.pop(code, 0.6);
+          // these two tags would be half hidden (behind the text card / cut by the frame edge)
+          S.hide(tags.clara, 0, 0.2);
+          S.hide(tags.riley, 0, 0.2);
           chapters.forEach((m, i) => {
             S.fly(m, [BENCH[i], 1.0, BENCH_Z + 0.05], 0.9, { delay: i * 0.08, arc: 1.3 });
             S.hide(m, 1.0);
@@ -197,6 +208,7 @@ export default {
       {
         cam: [-0.4, 3.5, 1.6, 1.9, 1.3, -4],
         run() {
+          S.pop(tags.riley, 0.3, 1, 0.35);
           products.forEach((p, i) => S.fly(p, [SLOT[i], BELT_Y, BELT_Z], 0.9, { delay: i * 0.2, arc: 1.0 }));
           work(['riley'], 1, 1.2);
           S.pop(oks[0], 1.6);
