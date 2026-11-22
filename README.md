@@ -6,7 +6,7 @@
 Presentation link : https://deck.nerio.dev/#0-0
 
 
-Demo link : [https://deck.nerio.dev/](https://deck.nerio.dev/ensit-demo.mp4)
+Demo link : https://deck.nerio.dev/ensit-demo.mp4
 
 
 **LessonForge turns a pile of lecture PDFs into a full study space:** a structured course with citations,
