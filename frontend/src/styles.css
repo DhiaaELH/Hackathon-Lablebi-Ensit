@@ -55,7 +55,6 @@ p { margin: 0 0 0.75rem; }
 .brand:hover { text-decoration: none; }
 .brand-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--ink); color: var(--paper); display: grid; place-items: center; font-family: var(--display); font-size: 1.15rem; font-weight: 650; transform: rotate(-4deg); }
 .brand-name { font-family: var(--display); font-size: 1.2rem; font-weight: 650; line-height: 1; }
-.brand-tag { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 3px; letter-spacing: 0.02em; }
 .side-link { display: flex; align-items: center; gap: 0.65rem; padding: 0.5rem 0.65rem; border-radius: 9px; color: var(--ink-2); font-weight: 500; position: relative; }
 .side-link:hover { background: var(--paper-2); text-decoration: none; }
 .side-link.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }

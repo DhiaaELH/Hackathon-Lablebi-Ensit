@@ -73,7 +73,6 @@ hr { border-top: 2px dashed var(--line); }
 .brand-mark { width: 38px; height: 38px; border-radius: 50%; background: var(--red); color: #fff; border: var(--pen); box-shadow: var(--sh-sm);
   font-family: var(--display); font-weight: 700; font-size: 1.25rem; transform: rotate(-6deg); }
 .brand-name { font-family: var(--display); font-weight: 700; font-size: 1.4rem; }
-.brand-tag { font-size: 0.88rem; }
 .side-link { font-family: var(--hand); border-radius: var(--wob); border: 2px solid transparent; color: var(--ink-2); font-size: 1.12rem; transition: transform 0.12s, background 0.12s; }
 .side-link:hover { background: transparent; border-color: var(--ink); border-style: dashed; text-decoration: none; transform: rotate(-0.6deg); }
 .side-link.active { background: var(--postit); border: var(--pen); box-shadow: var(--sh-sm); color: var(--ink); transform: rotate(-1deg); }

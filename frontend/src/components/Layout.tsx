@@ -57,7 +57,7 @@ export function Layout() {
         <aside className={`sidebar${open ? " open" : ""}`} aria-label="Main">
           <NavLink to="/" className="brand">
             <span className="brand-mark" aria-hidden="true">L</span>
-            <span><span className="brand-name">LessonForge</span><span className="brand-tag">{t("appTagline")}</span></span>
+            <span className="brand-name">LessonForge</span>
           </NavLink>
           {link("/", "book", "home", undefined, true)}
           {link("/library", "library", "library")}
