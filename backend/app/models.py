@@ -675,3 +675,35 @@ class RecommendationFeedback(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     recommendation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("recommendations.id", ondelete="CASCADE"), primary_key=True)
     action: Mapped[str] = mapped_column(String(12))  # saved|dismissed|tuned
+
+
+# ---------------------------------------------------------------- challenges (gamified: XP + global leaderboard)
+class Challenge(Base):
+    """A project or task published in a course by a teacher, peer tutor or admin. Students submit, an AI grader scores."""
+    __tablename__ = "challenges"
+    id: Mapped[uuid.UUID] = pk()
+    course_id: Mapped[uuid.UUID] = fk("courses.id")
+    chapter_id: Mapped[uuid.UUID | None] = fk("chapters.id", nullable=True, ondelete="SET NULL")
+    author_id: Mapped[uuid.UUID] = fk("users.id")
+    kind: Mapped[str] = mapped_column(String(10), default="task")  # task|project
+    title: Mapped[str] = mapped_column(String(200))
+    instructions: Mapped[str] = mapped_column(Text)
+    criteria: Mapped[list] = mapped_column(JSONB, default=list)
+    xp: Mapped[int] = mapped_column(Integer, default=50)
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = ts()
+
+
+class ChallengeSubmission(Base):
+    __tablename__ = "challenge_submissions"
+    id: Mapped[uuid.UUID] = pk()
+    challenge_id: Mapped[uuid.UUID] = fk("challenges.id")
+    user_id: Mapped[uuid.UUID] = fk("users.id")
+    answer: Mapped[str] = mapped_column(Text)
+    link: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    passed: Mapped[bool] = mapped_column(Boolean, default=False)
+    xp_awarded: Mapped[int] = mapped_column(Integer, default=0)
+    grading: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = ts()

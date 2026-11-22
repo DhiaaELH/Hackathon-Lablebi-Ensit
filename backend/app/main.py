@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .api import auth, classroom, community, courses, growth, insights, knowledge, learning, moderation, nova, social, system
+from .api import auth, challenges, classroom, community, courses, growth, insights, knowledge, learning, moderation, nova, social, system
 from .config import get_settings
 from .db import init_db
 from .security import CSRF_HEADER, CSRF_VALUE
@@ -44,5 +44,5 @@ async def csrf_guard(request: Request, call_next):
 
 
 for r in (auth.router, courses.router, learning.router, nova.router, insights.router, community.router, system.router,
-          social.router, knowledge.router, growth.router, moderation.router, classroom.router):
+          social.router, knowledge.router, growth.router, moderation.router, classroom.router, challenges.router):
     app.include_router(r)

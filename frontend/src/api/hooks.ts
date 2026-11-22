@@ -8,7 +8,7 @@ import { api } from "./client";
 import type {
   AssessmentCard, AssessmentDetail, CourseCard, CourseDetail, Health, Insights, Me, NotificationT, NovaHistoryItem,
   Progress, Projects, Revision, TeacherResponseT, ThreadCard, ThreadDetail, WorkflowStatus,
-  AdminStats, AdminUser, FeedThread, LlmCost, MemberT,
+  AdminStats, AdminUser, ChallengeList, FeedThread, Leaderboard, LlmCost, MemberT, PublishableCourse,
   ConversationT, DueCards, Suggestion, ExamList, ExamT, GlossaryTermT, GroupT, MessagesPage, PublicProfile, QueueItem, Recs, ReportT, SharedT,
 } from "./types";
 
@@ -34,6 +34,9 @@ export const qk = {
   notifications: ["notifications"] as const,
   llmStats: ["llmStats"] as const,
   llmCost: ["llmCost"] as const,
+  challenges: ["challenges"] as const,
+  leaderboard: ["leaderboard"] as const,
+  publishable: ["publishable"] as const,
   communityFeed: (courseId: string) => ["communityFeed", courseId] as const,
   people: (q: string) => ["people", q] as const,
   profile: (u: string) => ["profile", u] as const,
@@ -85,6 +88,10 @@ export const useThreads = (chapterId: string | null) =>
   useQuery({ queryKey: qk.threads(chapterId ?? ""), queryFn: () => api.get<ThreadCard[]>(`/api/chapters/${chapterId}/threads`), enabled: !!chapterId });
 export const useCommunityFeed = (courseId: string) =>
   useQuery({ queryKey: qk.communityFeed(courseId), queryFn: () => api.get<FeedThread[]>(`/api/community/feed${courseId ? `?course_id=${courseId}` : ""}`) });
+export const useChallenges = () => useQuery({ queryKey: qk.challenges, queryFn: () => api.get<ChallengeList>("/api/challenges") });
+export const useLeaderboard = () => useQuery({ queryKey: qk.leaderboard, queryFn: () => api.get<Leaderboard>("/api/leaderboard") });
+export const usePublishable = (enabled: boolean) =>
+  useQuery({ queryKey: qk.publishable, queryFn: () => api.get<PublishableCourse[]>("/api/challenges/publishable-courses"), enabled });
 export const useThread = (id: string | null) =>
   useQuery({ queryKey: qk.thread(id ?? ""), queryFn: () => api.get<ThreadDetail>(`/api/threads/${id}`), enabled: !!id });
 export const useInsights = (courseId: string | null) =>

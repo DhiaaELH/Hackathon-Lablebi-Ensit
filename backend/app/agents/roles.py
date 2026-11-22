@@ -292,3 +292,22 @@ def _demo_grade(question: dict, answer: str) -> dict:
     score = round(100 * len(met) / max(1, len(question["rubric"])))
     return {"score": score, "met": met, "missing": missing, "misconception": "",
             "feedback": "Estimation par mots-clés (mode démo, pas d'IA) : compare ta réponse avec les points attendus, puis regarde la solution."}
+
+
+# ---------------------------------------------------------------- challenge grading (fast tier)
+def grade_challenge(db: Session, course: Course, challenge: dict, answer: str, link: str | None, lang: str, script: str) -> tuple[dict, bool]:
+    """Scores a student's submission to a teacher/tutor challenge. Returns (OpenGrade dict, demo flag)."""
+    provider = get_provider("fast")
+    if isinstance(provider, DemoProvider):
+        return _demo_grade({"rubric": challenge["criteria"]}, answer), True
+    hits = hybrid_search(db, [course.id], f"{challenge['title']} {challenge['instructions']}"[:500], k=3)
+    criteria = "\n".join(f"- {c}" for c in challenge["criteria"])
+    user = (f"{ROLE_PROMPTS['challenge']}\n\n{language_instruction(lang, script)}\n\n"
+            f"<passages>\n{format_passages(hits)}\n</passages>\n\n"
+            f"<challenge>\nType: {challenge['kind']}\nTitle: {challenge['title']}\nInstructions:\n{challenge['instructions']}\n\n"
+            f"Success criteria:\n{criteria}\n</challenge>\n\n"
+            f"<submission>\n{answer}\n" + (f"\nLink given by the student (not opened): {link}\n" if link else "") + "</submission>")
+    grade, _ = provider.structured("challenge", [SystemBlock(GLOBAL_POLICY)], [{"role": "user", "content": user}], OpenGrade, app_cache=False, effort="low")
+    data = grade.model_dump()
+    data["score"] = max(0, min(100, data["score"]))
+    return data, False
