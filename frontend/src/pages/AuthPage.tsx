@@ -9,12 +9,13 @@ import { LanguageSwitch } from "../components/Layout";
 import { ErrorBox } from "../components/ui";
 import { useI18n } from "../i18n/I18n";
 
-const DEMO = [
-  ["student@demo.lessonforge.local", "Student"],
-  ["senior@demo.lessonforge.local", "Tutor"],
-  ["teacher@demo.lessonforge.local", "Teacher"],
-  ["moderator@demo.lessonforge.local", "Moderator"],
-];
+const QUICK_PASSWORD = "lessonforge2026";
+const QUICK = [
+  ["amira.benali@lessonforge.tn", "role_student"],
+  ["youssef.trabelsi@lessonforge.tn", "role_senior"],
+  ["sami.bensalah@lessonforge.tn", "role_teacher"],
+  ["ines.gharbi@lessonforge.tn", "role_admin"],
+] as const;
 
 const HERO: Record<string, { lead: string; em: string; tail: string; body: string }> = {
   fr: { lead: "Tes notes de cours,", em: "enfin", tail: "vivantes.", body: "Importe ton cours : LessonForge le structure, t'entraîne avec de vrais exercices, t'explique en Derja ou en français, et aide ta classe à savoir où ça bloque — sans jamais exposer qui." },
@@ -207,10 +208,10 @@ export function AuthPage() {
           </button>
           <hr style={{ margin: "0.3rem 0" }} />
           <div className="stack" style={{ gap: "0.4rem" }}>
-            <span className="tiny muted">{t("demoAccounts")} · <span className="kbd">demo-password-123</span></span>
+            <span className="tiny muted">{t("demoAccounts")} · <span className="kbd">{QUICK_PASSWORD}</span></span>
             <div className="row" style={{ gap: "0.35rem" }}>
-              {DEMO.map(([e, label]) => (
-                <button key={e} type="button" className="chip" onClick={() => typeInto(e, "demo-password-123")}>{label}</button>
+              {QUICK.map(([e, label]) => (
+                <button key={e} type="button" className="chip" onClick={() => typeInto(e, QUICK_PASSWORD)}>{t(label)}</button>
               ))}
             </div>
           </div>
