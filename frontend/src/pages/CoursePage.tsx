@@ -69,7 +69,7 @@ function RegenerateButton({ courseId }: { courseId: string }) {
       toast((e as Error).message, "err");
     }
   }
-  return <button className="btn btn-sm" onClick={run} title={health.data.tiers?.smart}><Icon name="wand" size={14} /> {t("regenerate")}</button>;
+  return <button className="btn btn-sm" onClick={run}><Icon name="wand" size={14} /> {t("regenerate")}</button>;
 }
 
 const NOVA_PREF = "lf_nova_open";

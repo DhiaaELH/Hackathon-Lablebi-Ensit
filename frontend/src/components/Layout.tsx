@@ -85,7 +85,6 @@ export function Layout() {
               <NavLink to="/settings" className="btn btn-sm btn-ghost"><Icon name="gear" size={16} /> {t("settings")}</NavLink>
               <button className="btn btn-sm btn-ghost" onClick={signOut} aria-label={t("signOut")}><Icon name="logout" size={16} /></button>
             </div>
-            {health.data?.tiers && <div className="tiny muted" title="LLM tiers">AI · {health.data.tiers.fast.split(":")[1]}</div>}
           </div>
         </aside>
         <div className="main">
