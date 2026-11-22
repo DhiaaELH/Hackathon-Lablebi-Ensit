@@ -3,7 +3,7 @@
 <img src="https://img.shields.io/badge/LessonForge-ff4d4d?style=for-the-badge&labelColor=2d2d2d&logo=bookstack&logoColor=white" alt="LessonForge" height="38" />
 
 # Your course notes, *finally* alive.
-
+Presentation link : https://deck.nerio.dev/#0-0
 **LessonForge turns a pile of lecture PDFs into a full study space:** a structured course with citations,
 real exercises with AI grading, revision packs, a topic map, a tutor that answers in **Derja, French, English or Arabic**,
 and anonymous class insights that show teachers where students get stuck, **without ever exposing who**.
