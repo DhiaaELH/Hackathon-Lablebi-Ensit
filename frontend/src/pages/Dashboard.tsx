@@ -32,7 +32,7 @@ export function CourseTile({ c, action, onRemove }: { c: CourseCard; action?: Re
         {c.is_demo && <span className="badge badge-warning">{t("demo")}</span>}
         {c.status === "processing" && <span className="badge badge-primary"><span className="spinner" style={{ width: 10, height: 10 }} /> {t("generating")}</span>}
       </div>
-      {c.description && <p className="muted small" style={{ margin: 0 }}>{c.description}</p>}
+      {c.description && <p className="muted small tile-desc" style={{ margin: 0 }} title={c.description}>{c.description}</p>}
       <div className="row" style={{ marginTop: "auto" }}>{action ?? <Link className="btn btn-primary btn-sm" to={`/courses/${c.id}`}>{t("open")} <Icon name="arrow" size={14} /></Link>}</div>
     </div>
   );
@@ -44,6 +44,7 @@ function Recommendations() {
   const invalidate = useInvalidate();
   const toast = useToast();
   const [tuning, setTuning] = useState(false);
+  const [all, setAll] = useState(false);
   if (recs.isLoading) return <div className="card stack"><div className="skeleton" style={{ width: "40%" }} /><div className="skeleton" /><div className="skeleton" /></div>;
   if (!recs.data) return null;
   async function fb(id: string, action: "saved" | "dismissed" | "none") {
@@ -73,14 +74,14 @@ function Recommendations() {
         </div>
       )}
       {recs.data.items.length === 0 && <p className="muted small" style={{ margin: 0 }}>{t("noRecs")}</p>}
-      {recs.data.items.slice(0, 5).map((r) => (
+      {recs.data.items.slice(0, all ? 8 : 3).map((r) => (
         <div key={r.id} className="row" style={{ borderTop: "1px solid var(--line)", paddingTop: "0.6rem", alignItems: "flex-start", flexWrap: "nowrap" }}>
           <span className="avatar" style={{ background: r.type === "concept" ? "var(--warning-soft)" : undefined, color: r.type === "concept" ? "var(--warning)" : undefined, borderColor: "transparent" }}>
             <Icon name={r.type === "concept" ? "target" : r.type === "section" ? "arrow" : "compass"} size={16} />
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <Link to={link(r)} style={{ fontWeight: 600, color: "var(--ink)" }}>{r.title}</Link>
-            <div className="small muted"><span className="eyebrow" style={{ marginInlineEnd: 6 }}>{t("whySuggested")}</span>{r.reason_code ? tf(`r_${r.reason_code}` as MessageKey, r.reason_args ?? {}) : r.reason}</div>
+            <div className="small muted rec-why"><span className="eyebrow" style={{ marginInlineEnd: 6 }}>{t("whySuggested")}</span>{r.reason_code ? tf(`r_${r.reason_code}` as MessageKey, r.reason_args ?? {}) : r.reason}</div>
           </div>
           <button className="btn btn-sm btn-ghost btn-icon" aria-pressed={r.saved} aria-label={t("saveIt")} title={t("saveIt")} onClick={() => fb(r.id, r.saved ? "none" : "saved")}>
             <Icon name="bookmark" size={16} className={r.saved ? "" : "muted"} />
@@ -88,6 +89,11 @@ function Recommendations() {
           <button className="btn btn-sm btn-ghost btn-icon" aria-label={t("dismiss")} title={t("dismiss")} onClick={() => fb(r.id, "dismissed")}><Icon name="x" size={16} /></button>
         </div>
       ))}
+      {recs.data.items.length > 3 && (
+        <button type="button" className="btn btn-sm btn-ghost" style={{ alignSelf: "flex-start" }} aria-expanded={all} onClick={() => setAll((v) => !v)}>
+          {all ? t("recLess") : t("recMore").replace("{n}", String(Math.min(8, recs.data.items.length) - 3))}
+        </button>
+      )}
     </section>
   );
 }
@@ -159,28 +165,30 @@ export function Dashboard() {
         </form>
       )}
 
-      <div className="grid dash-top">
-        {recent ? (
+      <div className="dash">
+        <div className="stack dash-main" style={{ gap: "1.4rem" }}>
+        {recent && (
           <Link to={`/courses/${recent.id}`} className="card card-hover stack continue-card" style={{ textDecoration: "none" }}>
             <span className="eyebrow">{t("continueLearning")}</span>
             <h2 style={{ margin: 0 }}>{recent.title.replace("[DÉMO] ", "")}</h2>
             <span className="small" style={{ color: "var(--ink-2)" }}>{recent.chapter_count} ch. · Nova · {t("practice")} · {t("revision")} · {t("community")}</span>
             <span className="btn btn-accent btn-sm" style={{ alignSelf: "flex-start", marginTop: "0.6rem" }}>{t("open")} <Icon name="arrow" size={14} /></span>
           </Link>
-        ) : <div />}
-        <div className="stack" style={{ gap: "1rem" }}>
+        )}
+        <section className="stack">
+          <div className="row between"><h2 style={{ margin: 0 }}>{t("myCourses")}</h2>
+            {courses.data && courses.data.length > 0 && <span className="small muted">{courses.data.length}</span>}</div>
+          {courses.isLoading && <div className="grid grid-2">{[0, 1, 2].map((i) => <div key={i} className="card skeleton" style={{ height: 150 }} />)}</div>}
+          {courses.error && <ErrorBox error={courses.error} />}
+          {courses.data && courses.data.length === 0 && <Empty>{t("noCourses")}</Empty>}
+          <div className="grid grid-2">{courses.data?.map((c) => <CourseTile key={c.id} c={c} onRemove={() => removeCourse(c)} />)}</div>
+        </section>
+        </div>
+        <aside className="stack dash-side" style={{ gap: "1rem" }}>
           <Recommendations />
           <WhoToFollow limit={3} compact />
-        </div>
+        </aside>
       </div>
-
-      <section className="stack">
-        <div className="row between"><h2 style={{ margin: 0 }}>{t("myCourses")}</h2></div>
-        {courses.isLoading && <div className="grid grid-2">{[0, 1, 2].map((i) => <div key={i} className="card skeleton" style={{ height: 150 }} />)}</div>}
-        {courses.error && <ErrorBox error={courses.error} />}
-        {courses.data && courses.data.length === 0 && <Empty>{t("noCourses")}</Empty>}
-        <div className="grid grid-2">{courses.data?.map((c) => <CourseTile key={c.id} c={c} onRemove={() => removeCourse(c)} />)}</div>
-      </section>
     </div>
   );
 }

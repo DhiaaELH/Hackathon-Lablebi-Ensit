@@ -54,6 +54,7 @@ export const MORE_FR = {
   chAiGrades: "L'IA corrige et donne l'XP automatiquement", chAiGradesOn: "Les élèves reçoivent leur note et leur XP tout de suite. Tu peux toujours corriger une note de l'IA.",
   chAiGradesOff: "Correction manuelle : chaque travail t'attend dans « Soumissions » ; tu donnes une note sur 100 et l'XP suit.",
   chScore: "Note", chFeedback: "Commentaire pour l'élève (facultatif)", chValidate: "Valider la note", chReGrade: "Corriger la note",
+  recMore: "Voir {n} de plus", recLess: "Voir moins",
 };
 
 export const MORE_EN: typeof MORE_FR = {
@@ -111,6 +112,7 @@ export const MORE_EN: typeof MORE_FR = {
   chAiGrades: "AI grades it and gives the XP automatically", chAiGradesOn: "Students get their score and XP right away. You can still change an AI grade.",
   chAiGradesOff: "Manual grading: every submission waits for you under “Submissions”; you give a score out of 100 and the XP follows.",
   chScore: "Score", chFeedback: "Comment for the student (optional)", chValidate: "Save grade", chReGrade: "Change grade",
+  recMore: "Show {n} more", recLess: "Show less",
 };
 
 export const MORE_AR: typeof MORE_FR = {
@@ -168,4 +170,5 @@ export const MORE_AR: typeof MORE_FR = {
   chAiGrades: "الذكاء الاصطناعي يصحّح ويمنح نقاط الخبرة تلقائيًا", chAiGradesOn: "يحصل الطلبة على علامتهم ونقاطهم فورًا. يمكنك دائمًا تعديل علامة الذكاء الاصطناعي.",
   chAiGradesOff: "تصحيح يدوي: كل إرسال ينتظرك في «الإرسالات»؛ تعطي علامة من 100 وتُمنح النقاط تبعًا لها.",
   chScore: "العلامة", chFeedback: "تعليق للطالب (اختياري)", chValidate: "حفظ العلامة", chReGrade: "تعديل العلامة",
+  recMore: "عرض {n} أخرى", recLess: "عرض أقل",
 };
