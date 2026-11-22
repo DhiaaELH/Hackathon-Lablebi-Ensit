@@ -63,7 +63,7 @@ export function Layout() {
           {link("/library", "library", "library")}
           {link("/people", "users", "people")}
           {link("/messages", "chat", "messages", unreadMsgs)}
-          {link("/community", "question", "community")}
+          {link("/community", "forum", "community")}
           {link("/challenges", "star", "challenges")}
           {link("/notifications", "bell", "notifications", unread)}
           {(role === "teacher" || role === "admin" || role === "senior") && <div className="side-sep" />}
