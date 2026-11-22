@@ -6,6 +6,8 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { SLIDES, CHAPTERS, UI, BODIES } from "./slides.js";
+import { createInner } from "./inner.js";
+import { createBiz } from "./biz.js";
 
 /* ════════════════════════════════════════════════════════════ state */
 const $ = (s) => document.querySelector(s);
@@ -21,10 +23,10 @@ let exploring = false;
 
 /* ════════════════════════════════════════════════════════════ planets */
 const PLANETS = [
-  { id: "clara", r: 7, size: 0.95, c1: "#5fb3a8", c2: "#1f6f66", tilt: 0.2, a0: 0.4 },
+  { id: "clara", r: 7, size: 0.95, c1: "#8f7be8", c2: "#35298a", tilt: 0.2, a0: 0.4 },
   { id: "quinn", r: 10.5, size: 0.8, c1: "#e2a15c", c2: "#8c4a1c", tilt: 0.1, a0: 2.1 },
-  { id: "alex", r: 14, size: 1.15, c1: "#9a82cf", c2: "#4b3577", tilt: 0.35, a0: 4.0 },
-  { id: "sage", r: 17.5, size: 1.0, c1: "#86b56a", c2: "#3c6630", tilt: 0.15, a0: 5.4 },
+  { id: "alex", r: 14, size: 1.15, c1: "#d27ac0", c2: "#5e1f55", tilt: 0.35, a0: 4.0 },
+  { id: "sage", r: 17.5, size: 1.0, c1: "#9fd2ea", c2: "#2b5d78", tilt: 0.15, a0: 5.4 },
   { id: "max", r: 21, size: 1.25, c1: "#d06a58", c2: "#6e2419", tilt: 0.05, a0: 1.2 },
   { id: "riley", r: 25, size: 1.05, c1: "#e3cf8c", c2: "#8d7639", tilt: 0.45, a0: 3.1, ring: true },
   { id: "sam", r: 36, size: 1.55, c1: "#7aa7dc", c2: "#22477a", tilt: 0.25, a0: 0.9, atmo: true },
@@ -41,6 +43,7 @@ const bodies = {};            // id -> { group, mesh, label, def, angle }
 const pickables = [];
 const comets = [];
 const waves = [];
+let inner = null, renderPass = null, mode = "outer", trans = null;
 let sun, sunMat, sunGlow, beltGroup, beltDust, beltRocks, clusterPts, lonePts, clusterGlows = [];
 let webgl = true;
 
@@ -146,7 +149,7 @@ function buildScene() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   scene = new THREE.Scene();
-  scene.background = new THREE.Color("#04080a");
+  scene.background = new THREE.Color("#05040b");
   camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 4000);
   camera.position.set(-8, 14, 58);
 
@@ -170,9 +173,16 @@ function buildScene() {
         void main(){
           float n = fbm(vDir*2.2 + vec3(0.0, uTime*0.004, 0.0));
           float m = fbm(vDir*4.5 + 7.0);
-          vec3 teal = vec3(0.03, 0.20, 0.19) * smoothstep(0.45, 0.85, n);
-          vec3 amber = vec3(0.22, 0.10, 0.03) * smoothstep(0.55, 0.9, m) * smoothstep(0.2, 0.8, 1.0 - abs(vDir.y));
-          gl_FragColor = vec4(teal + amber*0.7, 1.0);
+          vec3 axis = normalize(vec3(0.35, 1.0, 0.25));
+          float b = dot(vDir, axis);
+          float band = exp(-b*b*12.0);
+          float dust = fbm(vDir*9.0 + 3.0);
+          float lanes = smoothstep(0.5, 0.72, fbm(vDir*16.0 + 11.0));
+          vec3 violet = vec3(0.15, 0.05, 0.30) * smoothstep(0.42, 0.86, n);
+          vec3 indigo = vec3(0.02, 0.04, 0.17) * smoothstep(0.3, 0.8, m);
+          vec3 magenta = vec3(0.22, 0.03, 0.17) * smoothstep(0.62, 0.92, m) * (0.4 + band);
+          vec3 milky = vec3(0.62, 0.52, 0.85) * band * (0.2 + 0.8*smoothstep(0.35, 0.8, dust)) * 0.32 * (1.0 - lanes*0.75);
+          gl_FragColor = vec4(violet + indigo + magenta + milky, 1.0);
         }`,
     }),
   );
@@ -182,7 +192,7 @@ function buildScene() {
   // stars: two layers
   const starLayer = (count, size, rmin, rmax, opacity) => {
     const pos = new Float32Array(count * 3), col = new Float32Array(count * 3);
-    const tint = [new THREE.Color("#ffffff"), new THREE.Color("#cfe6ff"), new THREE.Color("#ffe6c4"), new THREE.Color("#bff0e6")];
+    const tint = [new THREE.Color("#ffffff"), new THREE.Color("#cfe6ff"), new THREE.Color("#ffe6c4"), new THREE.Color("#d9ccff")];
     for (let i = 0; i < count; i++) {
       const v = new THREE.Vector3().randomDirection().multiplyScalar(rmin + Math.random() * (rmax - rmin));
       pos.set([v.x, v.y, v.z], i * 3);
@@ -198,6 +208,22 @@ function buildScene() {
   const bright = starLayer(380, 2.4, 500, 1400, 0.9);
   bright.name = "bright";
   scene.add(bright);
+  { // Milky Way: extra stars squeezed towards the galactic band
+    const axis = new THREE.Vector3(0.35, 1, 0.25).normalize();
+    const n = 5200, pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+    const tints = [new THREE.Color("#ffffff"), new THREE.Color("#d9ccff"), new THREE.Color("#ffd6f0"), new THREE.Color("#c9d8ff")];
+    for (let i = 0; i < n; i++) {
+      const v = new THREE.Vector3().randomDirection();
+      v.addScaledVector(axis, -v.dot(axis) * (0.82 + Math.random() * 0.17)).normalize().multiplyScalar(600 + Math.random() * 700);
+      pos.set([v.x, v.y, v.z], i * 3);
+      const c = tints[(Math.random() * 4) | 0].clone().multiplyScalar(0.35 + Math.random() * 0.5);
+      col.set([c.r, c.g, c.b], i * 3);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    scene.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 1.1, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0.8, depthWrite: false })));
+  }
 
   // lights
   scene.add(new THREE.AmbientLight("#41545c", 0.8));
@@ -273,7 +299,7 @@ function buildScene() {
       const a = (k / 256) * Math.PI * 2;
       pts.push(new THREE.Vector3(Math.cos(a) * def.r, Math.sin(a) * def.r * 0.025, Math.sin(a) * def.r));
     }
-    const orbit = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: "#3fa69a", transparent: true, opacity: 0.16 }));
+    const orbit = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: "#7b6ae0", transparent: true, opacity: 0.16 }));
     scene.add(orbit);
 
     bodies[def.id] = { group, mesh, label: label.element.firstChild, def, angle: def.a0, orbit, pulse: 0 };
@@ -312,7 +338,7 @@ function buildScene() {
     beltGroup.add(beltDust);
 
     const rockCount = 240;
-    beltRocks = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshStandardMaterial({ color: "#8b877c", roughness: 1, flatShading: true, emissive: "#3fa69a", emissiveIntensity: 0 }), rockCount);
+    beltRocks = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshStandardMaterial({ color: "#8b877c", roughness: 1, flatShading: true, emissive: "#7b6ae0", emissiveIntensity: 0 }), rockCount);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), e = new THREE.Euler();
     for (let i = 0; i < rockCount; i++) {
       const a = Math.random() * Math.PI * 2;
@@ -332,7 +358,7 @@ function buildScene() {
       const cx = Math.cos(a) * r, cz = Math.sin(a) * r;
       const members = 5 + ((Math.random() * 7) | 0);
       for (let j = 0; j < members; j++) cpos.push(cx + (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 0.5, cz + (Math.random() - 0.5) * 1.2);
-      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture("rgba(120,240,220,0.9)", "rgba(60,200,180,0.25)"), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture("rgba(205,178,255,0.9)", "rgba(150,110,240,0.25)"), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
       glow.position.set(cx, 0, cz);
       glow.scale.setScalar(4.2);
       glow.userData.phase = Math.random() * 6;
@@ -348,20 +374,23 @@ function buildScene() {
       g2.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
       return new THREE.Points(g2, new THREE.PointsMaterial({ map: dotTex, color, size: 0.55, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
     };
-    clusterPts = mk(cpos, "#7af0dc");
+    clusterPts = mk(cpos, "#cdb2ff");
     lonePts = mk(lpos, "#8d9a97");
     beltGroup.add(clusterPts, lonePts);
   }
 
   // post-processing
   composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
+  renderPass = new RenderPass(scene, camera);
+  composer.addPass(renderPass);
   bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.9, 0.55, 0.62);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
+  biz.setPixelRatio(renderer.getPixelRatio());
 
   labelRenderer = new CSS2DRenderer({ element: $("#labels") });
   labelRenderer.setSize(innerWidth, innerHeight);
+  inner = createInner({ canvas, labelsEl: $("#labels-inner"), getLang: () => lang, reduceMotion, noise: NOISE });
 
   // picking
   const ray = new THREE.Raycaster();
@@ -377,12 +406,16 @@ function buildScene() {
   canvas.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });
   canvas.addEventListener("pointerup", (e) => {
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
+    if (mode === "inner") { if (!trans) inner.pick(e); return; }
+    if (mode === "biz") { if (!trans) biz.pick(e); return; }
     const id = pick(e);
     if (id) goToBody(id);
   });
   let hoverId = null;
   canvas.addEventListener("pointermove", (e) => {
     if (e.buttons) return;
+    if (mode === "inner") { canvas.style.cursor = inner.hover(e) ? "pointer" : ""; return; }
+    if (mode === "biz") { canvas.style.cursor = biz.hover(e) ? "pointer" : ""; return; }
     const id = pick(e);
     if (id === hoverId) return;
     if (hoverId && bodies[hoverId]) bodies[hoverId].label.classList.remove("hover");
@@ -455,7 +488,7 @@ function updateComets(dt) {
   }
 }
 
-function shockwave(maxR = 33, color = "#5fd1c0") {
+function shockwave(maxR = 33, color = "#a78bfa") {
   if (reduceMotion || !webgl) return;
   const m = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 128), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.6), transparent: true, opacity: 0.9, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
   m.rotation.x = -Math.PI / 2;
@@ -480,7 +513,7 @@ const TIMELINES = {
     [0.0, () => setPhase(0)],
     [0.6, () => { setPhase(1); bodies.sun.pulse = 1; }],
     [1.3, () => { setPhase(2); comet("sun", "clara", { dur: 1.0, color: "#ffcf86" }); }],
-    [2.5, () => { setPhase(3); GEN.forEach((id) => comet("clara", id, { dur: 1.25, color: "#7fe0d0" })); }],
+    [2.5, () => { setPhase(3); GEN.forEach((id) => comet("clara", id, { dur: 1.25, color: "#b39dff" })); }],
     [4.1, () => { setPhase(4); GEN.forEach((id, i) => comet(id, "riley", { dur: 1.2 + i * 0.08, color: "#f0dc9a" })); }],
     [5.7, () => { setPhase(5); shockwave(); beltFlash = 1; }],
   ] },
@@ -495,7 +528,7 @@ const TIMELINES = {
       novaTarget = pool[(Math.random() * pool.length) | 0];
       comet("nova", novaTarget, { dur: novaTarget === "finder" ? 0.6 : 1.25, color: "#f5efe2", size: 0.17 });
     }],
-    [1.9, () => comet(novaTarget, "nova", { dur: novaTarget === "finder" ? 0.6 : 1.25, color: "#9fd8cc", size: 0.17 })],
+    [1.9, () => comet(novaTarget, "nova", { dur: novaTarget === "finder" ? 0.6 : 1.25, color: "#f0a8e0", size: 0.17 })],
   ] },
 };
 let novaTarget = "sam";
@@ -590,9 +623,81 @@ function computeShift() {
 /* ════════════════════════════════════════════════════════════ render loop */
 const clock = new THREE.Clock();
 let elapsed = 0;
+const flashEl = $("#flash");
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const fwd = new THREE.Vector3();
+function tickTransition(dt) {
+  if (!trans) return;
+  trans.t = Math.min(1, trans.t + dt / trans.dur);
+  if (trans.kind === "dive") {
+    flashEl.style.opacity = smooth(0.3, 1, trans.t);
+    bodies.sun.pulse = Math.max(bodies.sun.pulse, trans.t);
+    if (trans.t >= 1) {
+      setMode("inner");
+      inner.enter(trans.s.id);
+      cam.dur = 2.2;
+      trans = { kind: "reveal", t: 0, dur: 1.4 };
+    }
+  } else if (trans.kind === "rise") {
+    flashEl.style.opacity = smooth(0.15, 1, trans.t);
+    inner.camera.getWorldDirection(fwd);
+    const step = dt * 90 * trans.t;
+    inner.camera.position.addScaledVector(fwd, step);
+    inner.controls.target.addScaledVector(fwd, step);
+    if (trans.t >= 1 && trans.to === "biz") {
+      setMode("biz");
+      biz.enter(trans.s.id);
+      trans = { kind: "reveal", t: 0, dur: 1.2 };
+    } else if (trans.t >= 1) {
+      const s = trans.s;
+      setMode("outer");
+      const g = goalFor(s)();
+      camera.position.copy(g.pos).normalize().multiplyScalar(SUN_R * 0.3);
+      controls.target.set(0, 0, 0);
+      flyTo(goalFor(s));
+      cam.dur = 2.6;
+      setTimeout(() => { cam.dur = 2.2; }, 2700);
+      setAnim(s.anim);
+      bodies.sun.pulse = 1;
+      shockwave(40, "#ffb060");
+      trans = { kind: "reveal", t: 0, dur: 1.2 };
+    }
+  } else if (trans.kind === "swap") {
+    flashEl.style.opacity = smooth(0, 1, trans.t);
+    if (trans.t >= 1) {
+      const s = trans.s;
+      setMode(trans.to);
+      if (trans.to === "biz") biz.enter(s.id);
+      else { camera.position.set(0, 40, 150); controls.target.set(0, 0, 0); setAnim(s.anim); flyTo(goalFor(s)); }
+      trans = { kind: "reveal", t: 0, dur: 1.0 };
+    }
+  } else {
+    flashEl.style.opacity = 1 - smooth(0, 1, trans.t);
+    if (trans.t >= 1) { flashEl.style.opacity = 0; flashEl.classList.remove("cool"); trans = null; }
+  }
+}
+
 function frame() {
   const dt = Math.min(clock.getDelta(), 0.1);
   elapsed += dt;
+  tickTransition(dt);
+  shift.x += (shift.tx - shift.x) * 0.08;
+  shift.y += (shift.ty - shift.y) * 0.08;
+  if (mode === "biz") {
+    biz.update(dt);
+    biz.camera.setViewOffset(innerWidth, innerHeight, -shift.x, shift.y, innerWidth, innerHeight);
+    composer.render();
+    requestAnimationFrame(frame);
+    return;
+  }
+  if (mode === "inner") {
+    inner.update(dt, !exploring && !trans);
+    inner.camera.setViewOffset(innerWidth, innerHeight, -shift.x, shift.y, innerWidth, innerHeight);
+    composer.render();
+    inner.labels.render(inner.scene, inner.camera);
+    requestAnimationFrame(frame);
+    return;
+  }
   const slide = SLIDES[index];
   const focused = exploring ? null : slide.focus;
   const timeScale = reduceMotion ? 0.12 : focused && slide.camVariant !== "wide" ? 0.35 : 1;
@@ -644,8 +749,6 @@ function frame() {
   updateCamera(dt);
   controls.update();
 
-  shift.x += (shift.tx - shift.x) * 0.08;
-  shift.y += (shift.ty - shift.y) * 0.08;
   camera.setViewOffset(innerWidth, innerHeight, -shift.x, shift.y, innerWidth, innerHeight);
 
   document.body.classList.toggle("far", camera.position.distanceTo(controls.target) > 125);
@@ -662,6 +765,8 @@ function onResize() {
   composer.setSize(innerWidth, innerHeight);
   bloom.setSize(innerWidth, innerHeight);
   labelRenderer.setSize(innerWidth, innerHeight);
+  inner.resize();
+  biz.resize();
   computeShift();
 }
 
@@ -685,6 +790,7 @@ function show(i, { instant = false } = {}) {
     panelInner.scrollTop = 0;
     $("#panel").scrollTop = 0;
     if (s.calculator) mountCalculator(panelInner.querySelector("#calc"));
+    if (s.chapter === 2 && inner) inner.bindPanel(panelInner);
     panelInner.classList.remove("out");
     void panelInner.offsetWidth;
     panelInner.classList.add("in");
@@ -696,11 +802,58 @@ function show(i, { instant = false } = {}) {
 
   Object.values(bodies).forEach((b) => b.label.classList.toggle("active", b.def.id === s.focus));
   document.body.dataset.slide = s.id;
-  if (webgl && !exploring) {
-    setAnim(s.anim);
-    flyTo(s.focus ? focusGoal(s.focus, s.camVariant) : PRESETS[s.cam || "hero"]);
-  }
+  biz.setSlide(s);
+  if (webgl && !exploring) routeScene(s);
   renderProgress();
+}
+
+/* ════════════════════════════════════════════════════════════ into / out of the sun */
+const goalFor = (s) => (s.focus ? focusGoal(s.focus, s.camVariant) : PRESETS[s.cam || "hero"]);
+function setMode(m) {
+  mode = m;
+  document.body.classList.toggle("in-core", m === "inner");
+  document.body.classList.toggle("in-biz", m === "biz");
+  controls.enabled = m === "outer";
+  inner.controls.enabled = m === "inner";
+  biz.controls.enabled = m === "biz";
+  renderPass.scene = m === "inner" ? inner.scene : m === "biz" ? biz.scene : scene;
+  renderPass.camera = m === "inner" ? inner.camera : m === "biz" ? biz.camera : camera;
+  if (m === "outer" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+}
+const modeFor = (s) => (s.chapter === 2 ? "inner" : s.chapter === 3 ? "biz" : "outer");
+function enterNow(m, s) {
+  setMode(m);
+  if (m === "inner") inner.enter(s.id);
+  else if (m === "biz") biz.enter(s.id);
+  else { setAnim(s.anim); flyTo(goalFor(s)); }
+}
+function routeScene(s) {
+  const want = modeFor(s);
+  const heading = trans && trans.kind !== "reveal" ? (trans.kind === "dive" ? "inner" : trans.to) : mode;
+  if (want === heading) {
+    if (trans && trans.kind !== "reveal") { trans.s = s; return; }
+    if (want === "inner") inner.goto(s.id);
+    else if (want === "biz") biz.goto(s.id);
+    else { setAnim(s.anim); flyTo(goalFor(s)); }
+    return;
+  }
+  if (trans && trans.kind !== "reveal") { // changed our mind mid-transition: cancel it
+    trans = null; flashEl.style.opacity = 0; flashEl.classList.remove("cool"); cam.dur = 2.2;
+    if (mode === want) { routeScene(s); return; }
+  }
+  if (reduceMotion) { enterNow(want, s); return; }
+  if (mode === "outer" && want === "inner") { // dive: fall into the sun, the screen floods with light
+    setAnim(null);
+    const dir = camera.position.clone().normalize();
+    flyTo(() => ({ pos: dir.clone().multiplyScalar(SUN_R * 0.25), target: dir.clone().multiplyScalar(-6) }));
+    cam.dur = 1.8;
+    trans = { kind: "dive", t: 0, dur: 1.8, s, to: "inner" };
+  } else if (mode === "inner") {
+    trans = { kind: "rise", t: 0, dur: 1.0, s, to: want };
+  } else {
+    flashEl.classList.add("cool");
+    trans = { kind: "swap", t: 0, dur: 0.7, s, to: want };
+  }
 }
 
 function renderProgress() {
@@ -733,7 +886,7 @@ function setExplore(on) {
   hint.textContent = UI[lang].exploreHint;
   computeShift();
   if (!webgl) return;
-  if (on) { setAnim(null); flyTo(PRESETS.explore); }
+  if (on) { if (mode === "outer") { setAnim(null); flyTo(PRESETS.explore); } }
   else show(index, { instant: true });
 }
 
@@ -756,6 +909,9 @@ function setLang(l) {
   panelInner.innerHTML = slideHTML(SLIDES[index], lang);
   if (SLIDES[index].calculator) mountCalculator(panelInner.querySelector("#calc"));
   panelInner.classList.add("in");
+  if (inner) inner.setLang();
+  biz.setLang();
+  $("#core-badge").textContent = UI[l].core;
   renderProgress();
   buildPrint();
 }
@@ -798,14 +954,16 @@ const CALC_TXT = {
     perMonth: "per month", perStudent: "per student / month", cheaper: "cheaper", naive: "Naive approach", ours: "LessonForge",
     gen: "Course generation", tutor: "Tutor (Nova / Sam)", grade: "Exercise grading", total: "Total",
     prices: "Price assumptions (USD per 1M tokens)", smartIn: "Smart in", smartOut: "Smart out", fastIn: "Fast in", fastOut: "Fast out", cacheDisc: "Cache discount %",
-    note: `Token counts come from our own call log: ≈100k in / 18k out per generated course, ≈4.1k in / 150 out per tutor turn (16% served from cache), ≈1.4k in / 190 out per graded exercise. Prices are illustrative — replace them with your provider's current rate card. <strong>Naive</strong> = every student generates their own copy, the smart model everywhere, the whole course resent with every tutor message, no caching.`,
+    more: "More assumptions & prices", breakdown: "Breakdown",
+    note: `Tokens measured from our call logs. Prices are editable examples. <strong>Naive</strong> = each student generates their own copy, smart model everywhere, no RAG, no cache.`,
   },
   fr: {
     students: "Étudiants", classSize: "Taille de classe", courses: "Nouveaux cours / classe / mois", questions: "Messages au tuteur / étudiant / semaine", graded: "Exercices corrigés / étudiant / semaine",
     perMonth: "par mois", perStudent: "par étudiant / mois", cheaper: "moins cher", naive: "Approche naïve", ours: "LessonForge",
     gen: "Génération des cours", tutor: "Tuteur (Nova / Sam)", grade: "Correction d'exercices", total: "Total",
     prices: "Hypothèses de prix (USD par million de tokens)", smartIn: "Smart entrée", smartOut: "Smart sortie", fastIn: "Rapide entrée", fastOut: "Rapide sortie", cacheDisc: "Remise cache %",
-    note: `Les tokens viennent de notre propre journal d'appels : ≈100k en entrée / 18k en sortie par cours généré, ≈4,1k / 150 par tour du tuteur (16 % servis depuis le cache), ≈1,4k / 190 par exercice corrigé. Les prix sont indicatifs — remplace-les par la grille actuelle de ton fournisseur. <strong>Naïf</strong> = chaque étudiant génère sa propre copie, le modèle « smart » partout, le cours entier renvoyé à chaque message, aucun cache.`,
+    more: "Autres hypothèses & prix", breakdown: "Détail",
+    note: `Tokens mesurés dans nos journaux d'appels. Prix modifiables, à titre d'exemple. <strong>Naïf</strong> = chaque étudiant génère sa copie, modèle « smart » partout, pas de RAG, pas de cache.`,
   },
 };
 const SLIDERS = [["students", 30, 5000, 10], ["classSize", 5, 120, 1], ["courses", 1, 12, 1], ["questions", 0, 80, 1], ["graded", 0, 30, 1]];
@@ -818,9 +976,11 @@ const money = (x, small = false) => {
 };
 const num = (x) => new Intl.NumberFormat(lang === "fr" ? "fr-FR" : "en-US").format(x);
 
+const MAIN_SLIDERS = ["students", "questions", "classSize"];
 function mountCalculator(root, { readonly = false } = {}) {
   if (!root) return;
   const T = CALC_TXT[lang];
+  const slider = ([k, min, max, step]) => `<label class="sl"><span>${T[k]} <output data-out="v-${k}"></output></span><input type="range" min="${min}" max="${max}" step="${step}" value="${calc[k]}" data-k="${k}" /></label>`;
   root.innerHTML = `
     <div class="calc">
       <div class="calc-hero">
@@ -831,17 +991,21 @@ function mountCalculator(root, { readonly = false } = {}) {
         <div class="bar-row" tabindex="0" data-which="naive"><span class="bar-name">${T.naive}</span><div class="bar-track"><i class="bar naive"></i></div><span class="bar-val" data-out="naiveT"></span></div>
         <div class="bar-row" tabindex="0" data-which="ours"><span class="bar-name">${T.ours}</span><div class="bar-track"><i class="bar ours"></i></div><span class="bar-val" data-out="oursT"></span></div>
       </div>
+      ${readonly ? "" : `<div class="sliders">
+        ${SLIDERS.filter(([k]) => MAIN_SLIDERS.includes(k)).map(slider).join("")}
+      </div>`}
+      <details class="prices"${readonly ? " open" : ""}><summary>${T.breakdown}</summary>
       <table class="breakdown">
         <thead><tr><th></th><th>${T.naive}</th><th>${T.ours}</th></tr></thead>
         <tbody>
           ${["gen", "tutor", "grade"].map((k) => `<tr><td>${T[k]}</td><td data-out="n-${k}"></td><td data-out="o-${k}"></td></tr>`).join("")}
           <tr class="tot"><td>${T.total} <span class="muted">· ${T.perMonth}</span></td><td data-out="n-t"></td><td data-out="o-t"></td></tr>
         </tbody>
-      </table>
-      ${readonly ? "" : `<div class="sliders">
-        ${SLIDERS.map(([k, min, max, step]) => `<label class="sl"><span>${T[k]} <output data-out="v-${k}"></output></span><input type="range" min="${min}" max="${max}" step="${step}" value="${calc[k]}" data-k="${k}" /></label>`).join("")}
-      </div>
-      <details class="prices"><summary>${T.prices}</summary><div class="price-grid">
+      </table></details>
+      ${readonly ? "" : `<details class="prices"><summary>${T.more}</summary>
+        <div class="sliders">${SLIDERS.filter(([k]) => !MAIN_SLIDERS.includes(k)).map(slider).join("")}</div>
+        <p class="tiny-cap">${T.prices}</p>
+        <div class="price-grid">
         ${PRICE_KEYS.map((k) => `<label><span>${T[k]}</span><input type="number" min="0" step="${k === "cacheDisc" ? 5 : 0.01}" value="${calc[k]}" data-k="${k}" /></label>`).join("")}
       </div></details>`}
       <p class="calc-note">${T.note}</p>
@@ -861,6 +1025,7 @@ function mountCalculator(root, { readonly = false } = {}) {
     out("o-t").textContent = money(r.oursT);
     SLIDERS.forEach(([k]) => { const o = out(`v-${k}`); if (o) o.textContent = num(calc[k]); });
     root._r = r;
+    if (!readonly) biz.refresh();
   };
   root.querySelectorAll("input[data-k]").forEach((inp) => {
     inp.addEventListener("input", () => {
@@ -890,6 +1055,8 @@ function mountCalculator(root, { readonly = false } = {}) {
   update();
 }
 
+const biz = createBiz({ canvas, getCost: () => ({ r: costs(calc), calc, money }), getLang: () => lang, reduceMotion });
+
 /* ════════════════════════════════════════════════════════════ print deck (Ctrl/⌘+P → PDF) */
 function buildPrint() {
   const root = $("#print");
@@ -899,6 +1066,10 @@ function buildPrint() {
 
 /* ════════════════════════════════════════════════════════════ input */
 $("#prevBtn").addEventListener("click", () => show(index - 1));
+panelInner.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]");
+  if (b && inner && mode === "inner") inner.act(b.dataset.act, b.dataset);
+});
 $("#nextBtn").addEventListener("click", () => show(index + 1));
 $("#progress").addEventListener("click", (e) => { const b = e.target.closest("[data-i]"); if (b) show(Number(b.dataset.i)); });
 document.querySelectorAll("[data-lang]").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
@@ -950,8 +1121,12 @@ if (webgl) {
   }
 }
 setLang(lang);
+if (webgl && modeFor(SLIDES[index]) !== "outer") { setMode(modeFor(SLIDES[index])); }
 show(index, { instant: true });
-if (webgl) {
+if (webgl && mode !== "outer") {
+  if (mode === "inner") inner.enter(SLIDES[index].id); else biz.enter(SLIDES[index].id);
+  requestAnimationFrame(frame);
+} else if (webgl) {
   const g = (SLIDES[index].focus ? focusGoal(SLIDES[index].focus, SLIDES[index].camVariant) : PRESETS[SLIDES[index].cam || "hero"])();
   camera.position.copy(g.pos).add(new THREE.Vector3(0, 40, 120)); // fly in on load
   flyTo(SLIDES[index].focus ? focusGoal(SLIDES[index].focus, SLIDES[index].camVariant) : PRESETS[SLIDES[index].cam || "hero"]);
